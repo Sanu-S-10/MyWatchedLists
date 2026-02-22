@@ -1,0 +1,23 @@
+.star-rating {
+    display: flex;
+    gap: 4px;
+}
+
+.star-rating.readonly .star {
+    cursor: default;
+}
+
+.star-rating .star {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease;
+}
+
+.star-rating:not(.readonly) .star:hover {
+    transform: scale(1.1);
+}

@@ -1,0 +1,24 @@
+.layout-container {
+    display: flex;
+    min-height: 100vh;
+    width: 100%;
+}
+
+.main-content {
+    flex: 1;
+    margin-left: 250px;
+    padding: 32px;
+    padding-bottom: 24px;
+    background-color: var(--bg-color);
+    min-height: 100vh;
+    overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 0;
+        padding: 16px;
+        padding-bottom: 80px;
+        /* Space for bottom nav */
+    }
+}
