@@ -34,6 +34,7 @@ const AppRoutes = () => {
             <Route path="/series" element={<ContentList type="series" title="My Series" />} />
             <Route path="/anime" element={<ContentList type="anime" title="My Anime" />} />
             <Route path="/animation" element={<ContentList type="animation" title="My Animation" />} />
+            <Route path="/documentary" element={<ContentList type="documentary" title="My Documentary" />} />
             <Route path="/favorites" element={<ContentList type="favorites" title="My Favorites" />} />
             <Route path="/search" element={<SearchPage />} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />

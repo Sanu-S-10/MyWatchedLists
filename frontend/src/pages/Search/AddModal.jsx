@@ -10,6 +10,16 @@ import StarRating from '../../components/UI/StarRating';
 import Button from '../../components/UI/Button';
 import './AddModal.css';
 
+// TMDB Genre ID mapping as fallback
+const GENRE_MAP = {
+    28: 'Action', 12: 'Adventure', 16: 'Animation', 35: 'Comedy', 80: 'Crime',
+    99: 'Documentary', 18: 'Drama', 10751: 'Family', 14: 'Fantasy', 36: 'History',
+    27: 'Horror', 10402: 'Music', 9648: 'Mystery', 10749: 'Romance', 878: 'Science Fiction',
+    10770: 'TV Movie', 53: 'Thriller', 10752: 'War', 37: 'Western',
+    10759: 'Action & Adventure', 10762: 'Kids', 10763: 'News', 10764: 'Reality',
+    10765: 'Sci-Fi & Fantasy', 10766: 'Soap', 10767: 'Talk', 10768: 'War & Politics'
+};
+
 const AddModal = ({ item, onClose }) => {
     const navigate = useNavigate();
     const { user } = useContext(AuthContext);
@@ -201,8 +211,11 @@ const AddModal = ({ item, onClose }) => {
 
         let calculatedSubType = 'live_action';
         const isAnimation = details?.genres?.some(g => g.id === 16) || item.genre_ids?.includes(16);
+        const isDocumentary = details?.genres?.some(g => g.id === 99) || item.genre_ids?.includes(99);
 
-        if (isAnimation) {
+        if (isDocumentary) {
+            calculatedSubType = 'documentary';
+        } else if (isAnimation) {
             const isJapanese =
                 item.original_language === 'ja' ||
                 details?.original_language === 'ja' ||
@@ -216,6 +229,16 @@ const AddModal = ({ item, onClose }) => {
             ? details?.production_countries?.[0]?.iso_3166_1
             : details?.origin_country?.[0] || item.origin_country?.[0];
 
+        // Ensure genres are always included - use details genres or fallback to genre_ids from search
+        let genresArray = details?.genres || [];
+        if (genresArray.length === 0 && item.genre_ids && item.genre_ids.length > 0) {
+            // Fallback: map genre_ids to genre objects using GENRE_MAP
+            genresArray = item.genre_ids.map(id => ({
+                id: id,
+                name: GENRE_MAP[id] || 'Unknown'
+            })).filter(g => g.name !== 'Unknown');
+        }
+
         const payload = {
             tmdbId: item.id,
             mediaType: isMovie ? 'movie' : 'series', // Strictly movie or series for runtime features
@@ -224,7 +247,7 @@ const AddModal = ({ item, onClose }) => {
             posterPath: item.poster_path,
             originCountry: originCountryCode || '',
             releaseDate: item.release_date || item.first_air_date,
-            genres: details?.genres || [],
+            genres: genresArray,
             rating,
             userNotes,
             isFavorite,

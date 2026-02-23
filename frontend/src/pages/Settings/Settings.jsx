@@ -7,8 +7,19 @@ import { ToastContext } from '../../context/ToastContext';
 import Button from '../../components/UI/Button';
 import Input from '../../components/UI/Input';
 import ConfirmModal from '../../components/UI/ConfirmModal';
+import ClearHistoryModal from '../../components/UI/ClearHistoryModal';
 import { Palette, Download, Shield, Upload } from 'lucide-react';
 import './Settings.css';
+
+// TMDB Genre ID mapping as fallback
+const GENRE_MAP = {
+    28: 'Action', 12: 'Adventure', 16: 'Animation', 35: 'Comedy', 80: 'Crime',
+    99: 'Documentary', 18: 'Drama', 10751: 'Family', 14: 'Fantasy', 36: 'History',
+    27: 'Horror', 10402: 'Music', 9648: 'Mystery', 10749: 'Romance', 878: 'Science Fiction',
+    10770: 'TV Movie', 53: 'Thriller', 10752: 'War', 37: 'Western',
+    10759: 'Action & Adventure', 10762: 'Kids', 10763: 'News', 10764: 'Reality',
+    10765: 'Sci-Fi & Fantasy', 10766: 'Soap', 10767: 'Talk', 10768: 'War & Politics'
+};
 
 const themes = [
     { id: 'dark', name: 'Dark', color: '#0d0d0d', accent: '#e50914' },
@@ -79,12 +90,19 @@ const Settings = () => {
         addToast('Data exported successfully', 'success');
     };
 
-    const handleClearHistory = async () => {
+    const handleClearHistory = async (options) => {
         setIsClearingHistory(true);
         try {
-            const result = await clearHistory();
+            const mediaTypesToClear = [];
+            if (options.clearMovies) mediaTypesToClear.push('movie');
+            if (options.clearSeries) mediaTypesToClear.push('series');
+
+            const result = await clearHistory(mediaTypesToClear);
             if (result.success) {
-                addToast('Watch history cleared', 'success');
+                const message = mediaTypesToClear.length === 2 
+                    ? 'All watch history cleared'
+                    : `${mediaTypesToClear.join(' & ')} cleared`;
+                addToast(message, 'success');
                 setIsClearModalOpen(false);
             } else {
                 addToast(result.message || 'Failed to clear history', 'error');
@@ -181,6 +199,42 @@ The Matrix,movie,5,1999,Mind-bending classic,`;
         }
     };
 
+    const detectContentType = (fullDetails, row) => {
+        // Content type detection based on TMDB genres and production info
+        const genres = fullDetails?.genres || [];
+        const genreIds = genres.map(g => g.id);
+        const genreNames = genres.map(g => g.name.toLowerCase());
+        
+        // TMDB Genre IDs: 16 = Animation, 99 = Documentary
+        const isAnimation = genreIds.includes(16) || genreNames.includes('animation');
+        const isDocumentary = genreIds.includes(99) || genreNames.includes('documentary');
+        
+        // Check for anime keywords and characteristics
+        const title = (fullDetails?.title || fullDetails?.name || '').toLowerCase();
+        const originCountries = fullDetails?.origin_country || [];
+        const productionCountries = fullDetails?.production_countries?.map(c => c.iso_3166_1) || [];
+        const allCountries = [...originCountries, ...productionCountries];
+        
+        // Documentary has priority as it's a specific genre
+        if (isDocumentary) {
+            return 'documentary';
+        }
+        
+        // Japanese origin typically indicates potential anime
+        const isJapanese = allCountries.includes('JP');
+        const hasAnimeKeywords = /anime|otaku|manga|hentai|shounen|seinen|shoujo/i.test(title);
+        
+        if (isAnimation && (isJapanese || hasAnimeKeywords)) {
+            return 'anime';
+        }
+        
+        if (isAnimation) {
+            return 'animation';
+        }
+        
+        return 'live_action';
+    };
+
     const handleBulkImport = async () => {
         if (!importFile) {
             addToast('Please select a CSV file', 'warning');
@@ -206,7 +260,13 @@ The Matrix,movie,5,1999,Mind-bending classic,`;
             const results = {
                 success: 0,
                 failed: 0,
-                errors: []
+                errors: [],
+                stats: {
+                    anime: 0,
+                    animation: 0,
+                    documentary: 0,
+                    live_action: 0
+                }
             };
 
             for (let i = 0; i < rows.length; i++) {
@@ -231,19 +291,32 @@ The Matrix,movie,5,1999,Mind-bending classic,`;
                     }
 
                     const fullDetails = await fetchFullDetails(searchResult.id, row.type);
+                    
+                    // Detect content type (anime, animation, or live_action)
+                    const subType = detectContentType(fullDetails, row);
+
+                    // Ensure genres are always included - use fullDetails genres or fallback to genre_ids
+                    let genresArray = fullDetails?.genres || [];
+                    if (genresArray.length === 0 && searchResult.genre_ids && searchResult.genre_ids.length > 0) {
+                        // Fallback: map genre_ids to genre objects using GENRE_MAP
+                        genresArray = searchResult.genre_ids.map(id => ({
+                            id: id,
+                            name: GENRE_MAP[id] || 'Unknown'
+                        })).filter(g => g.name !== 'Unknown');
+                    }
 
                     const isMovie = row.type.toLowerCase() === 'movie';
                     const payload = {
                         tmdbId: searchResult.id,
                         mediaType: isMovie ? 'movie' : 'series',
-                        subType: 'live_action',
+                        subType: subType,
                         title: searchResult.title || searchResult.name,
                         posterPath: searchResult.poster_path,
                         originCountry: isMovie
                             ? fullDetails?.production_countries?.[0]?.iso_3166_1 || ''
                             : fullDetails?.origin_country?.[0] || '',
                         releaseDate: searchResult.release_date || searchResult.first_air_date,
-                        genres: fullDetails?.genres || [],
+                        genres: genresArray,
                         rating: row.rating ? parseInt(row.rating) : 0,
                         userNotes: row.notes || '',
                         isFavorite: false,
@@ -263,6 +336,7 @@ The Matrix,movie,5,1999,Mind-bending classic,`;
 
                     if (result.success) {
                         results.success++;
+                        results.stats[subType]++;
                     } else {
                         results.failed++;
                         results.errors.push(`Row ${i + 2}: ${result.message}`);
@@ -276,8 +350,11 @@ The Matrix,movie,5,1999,Mind-bending classic,`;
             }
 
             setImportResults(results);
+            const statsMsg = results.success > 0 
+                ? ` | Anime: ${results.stats.anime}, Animation: ${results.stats.animation}, Documentary: ${results.stats.documentary}, Live Action: ${results.stats.live_action}`
+                : '';
             addToast(
-                `Import completed! ${results.success} added, ${results.failed} failed`,
+                `Import completed! ${results.success} added, ${results.failed} failed${statsMsg}`,
                 results.failed === 0 ? 'success' : 'warning'
             );
         } catch (error) {
@@ -409,6 +486,38 @@ The Matrix,movie,5,1999,Mind-bending classic,`;
                                     )}
                                 </div>
 
+                                {importResults.success > 0 && importResults.stats && (
+                                    <div className="content-type-stats">
+                                        <h5>Content Type Breakdown:</h5>
+                                        <div className="stats-breakdown">
+                                            {importResults.stats.anime > 0 && (
+                                                <div className="stat-item anime">
+                                                    <span className="stat-label">🎌 Anime</span>
+                                                    <span className="stat-value">{importResults.stats.anime}</span>
+                                                </div>
+                                            )}
+                                            {importResults.stats.animation > 0 && (
+                                                <div className="stat-item animation">
+                                                    <span className="stat-label">🎬 Animation</span>
+                                                    <span className="stat-value">{importResults.stats.animation}</span>
+                                                </div>
+                                            )}
+                                            {importResults.stats.documentary > 0 && (
+                                                <div className="stat-item documentary">
+                                                    <span className="stat-label">📽️ Documentary</span>
+                                                    <span className="stat-value">{importResults.stats.documentary}</span>
+                                                </div>
+                                            )}
+                                            {importResults.stats.live_action > 0 && (
+                                                <div className="stat-item live-action">
+                                                    <span className="stat-label">🎥 Live Action</span>
+                                                    <span className="stat-value">{importResults.stats.live_action}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
                                 {importResults.errors.length > 0 && (
                                     <div className="errors-list">
                                         <h5>Errors:</h5>
@@ -451,9 +560,7 @@ The Matrix,movie,5,1999,Mind-bending classic,`;
                 </div>
             </div>
             {isClearModalOpen && (
-                <ConfirmModal
-                    title="Clear watch history?"
-                    message="This will permanently remove all movies and series from your account. This action cannot be undone."
+                <ClearHistoryModal
                     onConfirm={handleClearHistory}
                     onCancel={() => setIsClearModalOpen(false)}
                     isLoading={isClearingHistory}

@@ -1,6 +1,6 @@
 import { useContext, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Film, Tv, Sparkles, Clapperboard, Layers } from 'lucide-react';
+import { Film, Tv, Sparkles, Clapperboard, Layers, BookOpen } from 'lucide-react';
 import { WatchHistoryContext } from '../../context/WatchHistoryContext';
 import './Watch.css';
 
@@ -13,7 +13,8 @@ const Watch = () => {
         const series = history.filter(item => item.mediaType === 'series').length;
         const anime = history.filter(item => item.subType === 'anime').length;
         const animation = history.filter(item => item.subType === 'animation').length;
-        return { total, movies, series, anime, animation };
+        const documentary = history.filter(item => item.subType === 'documentary').length;
+        return { total, movies, series, anime, animation, documentary };
     }, [history]);
 
     return (
@@ -61,6 +62,14 @@ const Watch = () => {
                     <div className="watch-card-body">
                         <h3>My Animation</h3>
                         <p>{counts.animation} titles</p>
+                    </div>
+                </Link>
+
+                <Link to="/documentary" className="watch-card">
+                    <div className="watch-icon"><BookOpen size={28} /></div>
+                    <div className="watch-card-body">
+                        <h3>My Documentary</h3>
+                        <p>{counts.documentary} titles</p>
                     </div>
                 </Link>
             </div>

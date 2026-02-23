@@ -118,11 +118,20 @@ const deleteWatchItem = async (req, res) => {
     }
 };
 
-// @desc    Clear all watch history for current user
+// @desc    Clear all watch history for current user, optionally by media type
 // @route   DELETE /api/watch-history
 // @access  Private
 const clearWatchHistory = async (req, res) => {
-    const result = await WatchItem.deleteMany({ user: req.user._id });
+    const { mediaType } = req.query;
+    let query = { user: req.user._id };
+    
+    if (mediaType) {
+        // mediaType can be a single string or comma-separated values
+        const types = mediaType.split(',').map(t => t.trim());
+        query.mediaType = { $in: types };
+    }
+    
+    const result = await WatchItem.deleteMany(query);
     res.json({ message: 'Watch history cleared', deletedCount: result.deletedCount || 0 });
 };
 

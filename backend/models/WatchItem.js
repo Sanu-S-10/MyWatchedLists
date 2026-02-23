@@ -18,7 +18,7 @@ const watchItemSchema = mongoose.Schema(
         },
         subType: {
             type: String,
-            enum: ['anime', 'animation', 'live_action'],
+            enum: ['anime', 'animation', 'documentary', 'live_action'],
             default: 'live_action'
         },
         title: {

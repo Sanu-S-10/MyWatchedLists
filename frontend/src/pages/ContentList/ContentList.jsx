@@ -71,6 +71,7 @@ const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
         if (type === 'series') items = items.filter(item => item.mediaType === 'series');
         if (type === 'anime') items = items.filter(item => item.subType === 'anime');
         if (type === 'animation') items = items.filter(item => item.subType === 'animation');
+        if (type === 'documentary') items = items.filter(item => item.subType === 'documentary');
         if (type === 'favorites') items = items.filter(item => item.isFavorite);
 
         // Apply secondary filters
