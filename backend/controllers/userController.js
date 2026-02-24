@@ -17,6 +17,9 @@ const registerUser = async (req, res) => {
         username,
         email,
         password,
+        preferences: {
+            theme: 'dark'
+        }
     });
 
     if (user) {
@@ -78,6 +81,11 @@ const updateUserProfile = async (req, res) => {
     const user = await User.findById(req.user._id);
 
     if (user) {
+        // Ensure preferences object exists
+        if (!user.preferences) {
+            user.preferences = {};
+        }
+
         if (req.body.theme) {
             user.preferences.theme = req.body.theme;
         }

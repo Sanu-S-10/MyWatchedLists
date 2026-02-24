@@ -33,14 +33,22 @@ export const AuthProvider = ({ children }) => {
     };
 
     const updatePreferences = async (theme) => {
+        if (!user || !user.token) {
+            throw new Error('User not authenticated');
+        }
         const config = {
             headers: {
                 Authorization: `Bearer ${user.token}`,
             },
         };
-        const { data } = await axios.put('/api/users/profile', { theme }, config);
-        setUser(data);
-        localStorage.setItem('userInfo', JSON.stringify(data));
+        try {
+            const { data } = await axios.put('/api/users/profile', { theme }, config);
+            setUser(data);
+            localStorage.setItem('userInfo', JSON.stringify(data));
+        } catch (error) {
+            console.error('Error updating preferences:', error.response?.data || error.message);
+            throw error;
+        }
     };
 
     return (

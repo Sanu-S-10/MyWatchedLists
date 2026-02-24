@@ -52,6 +52,7 @@ const Settings = () => {
             await updatePreferences(newTheme);
             addToast(`Theme changed to ${newTheme}`, 'success');
         } catch (error) {
+            console.error('Theme save failed:', error);
             addToast('Failed to save theme preference', 'error');
         }
     };
