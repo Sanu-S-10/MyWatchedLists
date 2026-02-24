@@ -1,4 +1,4 @@
-import { useState, useContext, useMemo } from 'react';
+import { useState, useContext, useMemo, useEffect } from 'react';
 import { WatchHistoryContext } from '../../context/WatchHistoryContext';
 import { ToastContext } from '../../context/ToastContext';
 import MediaCard from '../../components/UI/MediaCard';
@@ -6,7 +6,7 @@ import Skeleton from '../../components/UI/Skeleton';
 import EditModal from './EditModal';
 import DetailsModal from './DetailsModal';
 import ConfirmModal from '../../components/UI/ConfirmModal';
-import { Filter, SortDesc, Edit2, Search } from 'lucide-react';
+import { Filter, SortDesc, Edit2, Search, Grid3x3, List } from 'lucide-react';
 import './ContentList.css';
 
 const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
@@ -25,17 +25,98 @@ const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
     const [viewingItem, setViewingItem] = useState(null);
     const [itemToDelete, setItemToDelete] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
 
-    // Extract unique genres for the filter dropdown
+    // Create unique keys for each list type
+    const viewModeKey = `contentListViewMode_${type}`;
+    const filterStateKey = `contentListFilters_${type}`;
+
+    // Load view preference and filters from localStorage
+    useEffect(() => {
+        const savedViewMode = localStorage.getItem(viewModeKey);
+        if (savedViewMode) {
+            setViewMode(savedViewMode);
+        }
+
+        const savedFilters = localStorage.getItem(filterStateKey);
+        let newFilterState = {
+            genre: '',
+            rating: 0,
+            year: '',
+            country: '',
+            mediaType: '',
+            title: '',
+            sortBy: 'watchDateDesc'
+        };
+
+        if (savedFilters) {
+            try {
+                newFilterState = JSON.parse(savedFilters);
+                setFilterGenre(newFilterState.genre || '');
+                setFilterRating(newFilterState.rating || 0);
+                setFilterYear(newFilterState.year || '');
+                setFilterCountry(newFilterState.country || '');
+                setFilterMediaType(newFilterState.mediaType || '');
+                setFilterTitle(newFilterState.title || '');
+                setSortBy(newFilterState.sortBy || 'watchDateDesc');
+            } catch (error) {
+                console.error('Failed to load filters:', error);
+            }
+        }
+
+        // Check if current type has active filters and open filter panel accordingly
+        const hasActiveFilters = 
+            newFilterState.genre !== '' || 
+            newFilterState.rating > 0 || 
+            newFilterState.year !== '' || 
+            newFilterState.country !== '' || 
+            newFilterState.mediaType !== '' || 
+            newFilterState.title !== '' || 
+            newFilterState.sortBy !== 'watchDateDesc';
+
+        setShowFilters(hasActiveFilters);
+    }, [type, viewModeKey, filterStateKey]);
+
+    // Save view preference to localStorage
+    const handleViewModeChange = (mode) => {
+        setViewMode(mode);
+        localStorage.setItem(viewModeKey, mode);
+    };
+
+    // Save filters to localStorage whenever they change
+    useEffect(() => {
+        const filters = {
+            genre: filterGenre,
+            rating: filterRating,
+            year: filterYear,
+            country: filterCountry,
+            mediaType: filterMediaType,
+            title: filterTitle,
+            sortBy: sortBy,
+        };
+        localStorage.setItem(filterStateKey, JSON.stringify(filters));
+    }, [filterGenre, filterRating, filterYear, filterCountry, filterMediaType, filterTitle, sortBy, filterStateKey]);
+
+    // Extract unique genres for the filter dropdown - only for current list type
     const availableGenres = useMemo(() => {
+        let items = [...history];
+
+        // Filter by main type first
+        if (type === 'movies') items = items.filter(item => item.mediaType === 'movie');
+        if (type === 'series') items = items.filter(item => item.mediaType === 'series');
+        if (type === 'anime') items = items.filter(item => item.subType === 'anime');
+        if (type === 'animation') items = items.filter(item => item.subType === 'animation');
+        if (type === 'documentary') items = items.filter(item => item.subType === 'documentary');
+        if (type === 'favorites') items = items.filter(item => item.isFavorite);
+
         const genres = new Set();
-        history.forEach(item => {
+        items.forEach(item => {
             if (item.genres) {
                 item.genres.forEach(g => genres.add(g.name));
             }
         });
         return Array.from(genres).sort();
-    }, [history]);
+    }, [history, type]);
 
     const regionNames = useMemo(() => {
         try {
@@ -51,17 +132,27 @@ const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
         return regionNames.of(code) || code;
     };
 
-    // Extract unique countries (store ISO codes, display full names)
+    // Extract unique countries (store ISO codes, display full names) - only for current list type
     const availableCountries = useMemo(() => {
+        let items = [...history];
+
+        // Filter by main type first
+        if (type === 'movies') items = items.filter(item => item.mediaType === 'movie');
+        if (type === 'series') items = items.filter(item => item.mediaType === 'series');
+        if (type === 'anime') items = items.filter(item => item.subType === 'anime');
+        if (type === 'animation') items = items.filter(item => item.subType === 'animation');
+        if (type === 'documentary') items = items.filter(item => item.subType === 'documentary');
+        if (type === 'favorites') items = items.filter(item => item.isFavorite);
+
         const countries = new Map();
-        history.forEach(item => {
+        items.forEach(item => {
             if (item.originCountry) {
                 const label = getCountryLabel(item.originCountry);
                 countries.set(item.originCountry, label);
             }
         });
         return Array.from(countries.entries()).sort((a, b) => a[1].localeCompare(b[1]));
-    }, [history, regionNames]);
+    }, [history, regionNames, type]);
 
     const filteredItems = useMemo(() => {
         let items = [...history];
@@ -166,6 +257,22 @@ const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
                             </button>
                         )}
                     </div>
+                    <div className="view-toggle">
+                        <button
+                            className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
+                            onClick={() => handleViewModeChange('grid')}
+                            title="Grid View"
+                        >
+                            <Grid3x3 size={20} />
+                        </button>
+                        <button
+                            className={`view-btn ${viewMode === 'list' ? 'active' : ''}`}
+                            onClick={() => handleViewModeChange('list')}
+                            title="List View"
+                        >
+                            <List size={20} />
+                        </button>
+                    </div>
                     <button className="icon-btn" onClick={() => setShowFilters(!showFilters)}>
                         <Filter size={20} />
                         <span>Filters</span>
@@ -250,20 +357,66 @@ const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
             )}
 
             {loading ? (
-                <div className="grid-container">
+                <div className={`${viewMode}-container`}>
                     <Skeleton type="card" count={8} />
                 </div>
             ) : filteredItems.length > 0 ? (
-                <div className="grid-container">
+                <div className={`${viewMode}-container`}>
                     {filteredItems.map((item) => (
                         <div key={item._id} className="card-wrapper">
-                            <MediaCard item={item} onClick={() => setViewingItem(item)} />
-                            <div className="card-actions-hover">
-                                <button className="edit-btn" onClick={(e) => { e.stopPropagation(); setEditingItem(item); }} title="Edit">
-                                    <Edit2 size={14} />
-                                </button>
-                                <button className="delete-btn" onClick={(e) => handleDeleteRequest(item, e)} title="Remove">×</button>
-                            </div>
+                            {viewMode === 'grid' ? (
+                                <>
+                                    <MediaCard item={item} onClick={() => setViewingItem(item)} />
+                                    <div className="card-actions-hover">
+                                        <button className="edit-btn" onClick={(e) => { e.stopPropagation(); setEditingItem(item); }} title="Edit">
+                                            <Edit2 size={14} />
+                                        </button>
+                                        <button className="delete-btn" onClick={(e) => handleDeleteRequest(item, e)} title="Remove">×</button>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="list-item">
+                                    <div className="list-item-poster">
+                                        <img
+                                            src={item.posterPath ? `https://image.tmdb.org/t/p/w92${item.posterPath}` : 'https://via.placeholder.com/92x138?text=No+Poster'}
+                                            alt={item.title || item.name}
+                                            loading="lazy"
+                                        />
+                                    </div>
+                                    <div className="list-item-content" onClick={() => setViewingItem(item)}>
+                                        <h3>{item.title || item.name}</h3>
+                                        <div className="list-item-meta">
+                                            <span className="meta-year">
+                                                {item.releaseDate ? item.releaseDate.substring(0, 4) : item.first_air_date ? item.first_air_date.substring(0, 4) : 'N/A'}
+                                            </span>
+                                            <span className="meta-type">
+                                                {item.subType === 'anime' ? 'Anime ' : item.subType === 'animation' ? 'Animated ' : ''}
+                                                {item.mediaType === 'movie' ? 'Movie' : 'Series'}
+                                            </span>
+                                            {item.rating > 0 && (
+                                                <span className="meta-rating">
+                                                    {[...Array(5)].map((_, i) => (
+                                                        <span key={i} className={`star ${i < item.rating ? 'filled' : ''}`}>★</span>
+                                                    ))}
+                                                </span>
+                                            )}
+                                        </div>
+                                        {item.genres && item.genres.length > 0 && (
+                                            <div className="list-item-genres">
+                                                {item.genres.slice(0, 3).map(g => (
+                                                    <span key={g.id} className="genre-tag">{g.name}</span>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="list-item-actions">
+                                        <button className="edit-btn" onClick={(e) => { e.stopPropagation(); setEditingItem(item); }} title="Edit">
+                                            <Edit2 size={16} />
+                                        </button>
+                                        <button className="delete-btn" onClick={(e) => handleDeleteRequest(item, e)} title="Remove">×</button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     ))}
                 </div>

@@ -241,3 +241,207 @@
 .clear-search:hover {
     color: var(--danger-color);
 }
+
+/* View Toggle Styles */
+.view-toggle {
+    display: flex;
+    gap: 4px;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 4px;
+}
+
+.view-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background-color: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.view-btn:hover {
+    color: var(--text-primary);
+    background-color: var(--bg-color);
+}
+
+.view-btn.active {
+    background-color: var(--accent-color);
+    color: white;
+}
+
+/* Grid View */
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 20px;
+}
+
+/* List View */
+.list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.list-item {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px;
+    transition: all 0.2s ease;
+}
+
+.list-item:hover {
+    border-color: var(--accent-color);
+    background-color: var(--bg-tertiary);
+}
+
+.list-item-poster {
+    flex-shrink: 0;
+    width: 60px;
+    height: auto;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.list-item-poster img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.list-item-content {
+    flex: 1;
+    cursor: pointer;
+    min-width: 0;
+}
+
+.list-item-content h3 {
+    margin: 0 0 8px 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.list-item-meta {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.meta-year {
+    background-color: var(--bg-color);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.meta-type {
+    background-color: var(--bg-color);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.meta-rating {
+    display: flex;
+    gap: 2px;
+}
+
+.star {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.star.filled {
+    color: var(--star-color, #ffc107);
+}
+
+.list-item-genres {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.genre-tag {
+    background-color: var(--accent-color);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.list-item-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* Responsive adjustments for list view */
+@media (max-width: 768px) {
+    .grid-container {
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 16px;
+    }
+
+    .view-toggle {
+        gap: 2px;
+        padding: 3px;
+    }
+
+    .view-btn {
+        width: 32px;
+        height: 32px;
+    }
+
+    .list-item {
+        gap: 12px;
+        padding: 10px;
+    }
+
+    .list-item-poster {
+        width: 50px;
+    }
+
+    .list-item-content h3 {
+        font-size: 0.95rem;
+    }
+
+    .list-item-meta {
+        font-size: 0.8rem;
+        gap: 8px;
+    }
+}
+
+@media (max-width: 600px) {
+    .list-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .list-item-meta {
+        width: 100%;
+    }
+
+    .list-item-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+}

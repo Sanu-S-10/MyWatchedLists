@@ -19,14 +19,17 @@ const BottomNav = () => {
                 location.pathname === '/animation'
             );
         }
+        if (path === '/dashboard') {
+            return location.pathname === '/dashboard';
+        }
         return location.pathname === path;
     };
 
     return (
         <nav className="bottom-nav">
             <ul>
-                <li className={isActive('/') ? 'active' : ''}>
-                    <Link to="/">
+                <li className={isActive('/dashboard') ? 'active' : ''}>
+                    <Link to="/dashboard">
                         <Home size={24} />
                         <span>Home</span>
                     </Link>

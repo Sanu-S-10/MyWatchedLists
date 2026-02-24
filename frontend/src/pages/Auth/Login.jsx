@@ -16,7 +16,7 @@ const Login = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        if (user) navigate('/');
+        if (user) navigate('/dashboard');
     }, [user, navigate]);
 
     const handleSubmit = async (e) => {
@@ -29,7 +29,7 @@ const Login = () => {
         try {
             await login(email, password);
             addToast('Logged in successfully!', 'success');
-            navigate('/');
+            navigate('/dashboard');
         } catch (error) {
             addToast(error.response?.data?.message || 'Failed to login', 'error');
         } finally {

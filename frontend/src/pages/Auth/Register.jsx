@@ -18,7 +18,7 @@ const Register = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        if (user) navigate('/');
+        if (user) navigate('/dashboard');
     }, [user, navigate]);
 
     const handleSubmit = async (e) => {
@@ -36,7 +36,7 @@ const Register = () => {
         try {
             await register(username, email, password);
             addToast('Account created successfully!', 'success');
-            navigate('/');
+            navigate('/dashboard');
         } catch (error) {
             addToast(error.response?.data?.message || 'Failed to create account', 'error');
         } finally {
