@@ -19,6 +19,7 @@ const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
     const [filterCountry, setFilterCountry] = useState('');
     const [filterMediaType, setFilterMediaType] = useState(''); // 'movie', 'series', or ''
     const [filterTitle, setFilterTitle] = useState('');
+    const [filterStatus, setFilterStatus] = useState(''); // 'upcoming', 'progress', 'active', or ''
     const [sortBy, setSortBy] = useState('watchDateDesc'); // watchDateDesc, ratingDesc, yearDesc
     const [showFilters, setShowFilters] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
@@ -46,6 +47,7 @@ const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
             country: '',
             mediaType: '',
             title: '',
+            status: '',
             sortBy: 'watchDateDesc'
         };
 
@@ -58,6 +60,7 @@ const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
                 setFilterCountry(newFilterState.country || '');
                 setFilterMediaType(newFilterState.mediaType || '');
                 setFilterTitle(newFilterState.title || '');
+                setFilterStatus(newFilterState.status || '');
                 setSortBy(newFilterState.sortBy || 'watchDateDesc');
             } catch (error) {
                 console.error('Failed to load filters:', error);
@@ -72,6 +75,7 @@ const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
             newFilterState.country !== '' || 
             newFilterState.mediaType !== '' || 
             newFilterState.title !== '' || 
+            newFilterState.status !== '' ||
             newFilterState.sortBy !== 'watchDateDesc';
 
         setShowFilters(hasActiveFilters);
@@ -92,10 +96,11 @@ const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
             country: filterCountry,
             mediaType: filterMediaType,
             title: filterTitle,
+            status: filterStatus,
             sortBy: sortBy,
         };
         localStorage.setItem(filterStateKey, JSON.stringify(filters));
-    }, [filterGenre, filterRating, filterYear, filterCountry, filterMediaType, filterTitle, sortBy, filterStateKey]);
+    }, [filterGenre, filterRating, filterYear, filterCountry, filterMediaType, filterTitle, filterStatus, sortBy, filterStateKey]);
 
     // Extract unique genres for the filter dropdown - only for current list type
     const availableGenres = useMemo(() => {
@@ -132,6 +137,22 @@ const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
         return regionNames.of(code) || code;
     };
 
+    // Determine series status based on watched episodes
+    const getSeriesStatus = (item) => {
+        if (item.mediaType !== 'series') return null;
+        
+        const watchedEpisodeCount = item.watchedEpisodes?.length || 0;
+        const totalEpisodes = item.episodes || 0;
+
+        if (watchedEpisodeCount === 0) {
+            return 'upcoming'; // Not started
+        } else if (watchedEpisodeCount >= totalEpisodes && totalEpisodes > 0) {
+            return 'active'; // Completed/Active
+        } else {
+            return 'progress'; // Partially watched
+        }
+    };
+
     // Extract unique countries (store ISO codes, display full names) - only for current list type
     const availableCountries = useMemo(() => {
         let items = [...history];
@@ -153,6 +174,28 @@ const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
         });
         return Array.from(countries.entries()).sort((a, b) => a[1].localeCompare(b[1]));
     }, [history, regionNames, type]);
+
+    // Extract available series statuses - only for series list type
+    const availableStatuses = useMemo(() => {
+        let items = [...history];
+
+        // Filter by main type first
+        if (type === 'movies') items = items.filter(item => item.mediaType === 'movie');
+        if (type === 'series') items = items.filter(item => item.mediaType === 'series');
+        if (type === 'anime') items = items.filter(item => item.subType === 'anime');
+        if (type === 'animation') items = items.filter(item => item.subType === 'animation');
+        if (type === 'documentary') items = items.filter(item => item.subType === 'documentary');
+        if (type === 'favorites') items = items.filter(item => item.isFavorite);
+
+        const statuses = new Set();
+        items.forEach(item => {
+            const status = getSeriesStatus(item);
+            if (status) {
+                statuses.add(status);
+            }
+        });
+        return Array.from(statuses).sort();
+    }, [history, type]);
 
     const filteredItems = useMemo(() => {
         let items = [...history];
@@ -191,6 +234,10 @@ const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
             items = items.filter(item => item.originCountry === filterCountry);
         }
 
+        if (filterStatus) {
+            items = items.filter(item => getSeriesStatus(item) === filterStatus);
+        }
+
         // Apply media type filter for anime/animation
         if ((type === 'anime' || type === 'animation') && filterMediaType) {
             items = items.filter(item => item.mediaType === filterMediaType);
@@ -214,7 +261,7 @@ const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
         });
 
         return items;
-    }, [history, type, filterTitle, filterGenre, filterRating, filterYear, filterCountry, filterMediaType, sortBy]);
+    }, [history, type, filterTitle, filterGenre, filterRating, filterYear, filterCountry, filterStatus, filterMediaType, sortBy, getSeriesStatus]);
 
     const handleDeleteRequest = (item, e) => {
         e.stopPropagation();
@@ -312,15 +359,32 @@ const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
                             className="year-input"
                         />
                     </div>
-                    <div className="filter-group">
-                        <label>Country</label>
-                        <select value={filterCountry} onChange={(e) => setFilterCountry(e.target.value)}>
-                            <option value="">All Countries</option>
-                            {availableCountries.map(([code, label]) => (
-                                <option key={code} value={code}>{label}</option>
-                            ))}
-                        </select>
-                    </div>
+                    {type !== 'anime' && (
+                        <div className="filter-group">
+                            <label>Country</label>
+                            <select value={filterCountry} onChange={(e) => setFilterCountry(e.target.value)}>
+                                <option value="">All Countries</option>
+                                {availableCountries.map(([code, label]) => (
+                                    <option key={code} value={code}>{label}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+                    {(type === 'series' || type === 'anime' || type === 'all') && (
+                        availableStatuses.length > 0 && (
+                            <div className="filter-group">
+                                <label>Series Status</label>
+                                <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+                                    <option value="">All Statuses</option>
+                                    {availableStatuses.map(status => (
+                                        <option key={status} value={status}>
+                                            {status.charAt(0).toUpperCase() + status.slice(1)}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )
+                    )}
                     {(type === 'anime' || type === 'animation') && (
                         <div className="filter-group">
                             <label>Type</label>
@@ -350,6 +414,7 @@ const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
                             setFilterYear('');
                             setFilterCountry('');
                             setFilterMediaType('');
+                            setFilterStatus('');
                             setSortBy('watchDateDesc');
                         }}>Clear All</button>
                     </div>
@@ -393,6 +458,11 @@ const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
                                                 {item.subType === 'anime' ? 'Anime ' : item.subType === 'animation' ? 'Animated ' : ''}
                                                 {item.mediaType === 'movie' ? 'Movie' : 'Series'}
                                             </span>
+                                            {getSeriesStatus(item) && (
+                                                <span className={`meta-status ${getSeriesStatus(item)}`}>
+                                                    {getSeriesStatus(item).charAt(0).toUpperCase() + getSeriesStatus(item).slice(1)}
+                                                </span>
+                                            )}
                                             {item.rating > 0 && (
                                                 <span className="meta-rating">
                                                     {[...Array(5)].map((_, i) => (

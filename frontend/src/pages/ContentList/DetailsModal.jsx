@@ -9,6 +9,8 @@ const DetailsModal = ({ item, onClose, onEdit }) => {
     const [details, setDetails] = useState(null);
     const [loading, setLoading] = useState(true);
     const [expandOverview, setExpandOverview] = useState(false);
+    const [director, setDirector] = useState(null);
+    const [cast, setCast] = useState([]);
 
     useEffect(() => {
         const fetchDetails = async () => {
@@ -18,8 +20,15 @@ const DetailsModal = ({ item, onClose, onEdit }) => {
                 const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
 
                 if (API_KEY) {
-                    const { data } = await axios.get(`https://api.themoviedb.org/3/${type}/${item.tmdbId}?api_key=${API_KEY}`);
+                    const { data } = await axios.get(`https://api.themoviedb.org/3/${type}/${item.tmdbId}?api_key=${API_KEY}&append_to_response=credits`);
                     setDetails(data);
+                    
+                    // Extract director and cast
+                    if (data.credits) {
+                        const directorObj = data.credits.crew?.find(person => person.job === 'Director');
+                        setDirector(directorObj || null);
+                        setCast(data.credits.cast?.slice(0, 8) || []);
+                    }
                 } else {
                     setDetails({});
                 }
@@ -88,6 +97,23 @@ const DetailsModal = ({ item, onClose, onEdit }) => {
                                             >
                                                 {expandOverview ? 'Show Less' : 'Show More'}
                                             </button>
+                                        )}
+                                    </div>
+                                )}
+
+                                {(director || cast.length > 0) && (
+                                    <div style={{ marginTop: '12px' }}>
+                                        {director && (
+                                            <p style={{ margin: '4px 0', fontSize: '0.85rem' }}>
+                                                <span style={{ color: 'var(--text-secondary)' }}>Director:</span>
+                                                <span style={{ marginLeft: '8px', fontWeight: '500' }}>{director.name}</span>
+                                            </p>
+                                        )}
+                                        {cast.length > 0 && (
+                                            <p style={{ margin: '4px 0', fontSize: '0.85rem' }}>
+                                                <span style={{ color: 'var(--text-secondary)' }}>Cast:</span>
+                                                <span style={{ marginLeft: '8px', fontWeight: '500' }}>{cast.map(c => c.name).join(', ')}</span>
+                                            </p>
                                         )}
                                     </div>
                                 )}

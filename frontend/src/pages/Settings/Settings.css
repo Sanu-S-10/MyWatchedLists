@@ -341,6 +341,139 @@
     color: var(--accent-color);
 }
 
+.profile-info {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.profile-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.profile-field label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.profile-value {
+    font-size: 1rem;
+    color: var(--text-primary);
+    padding: 12px;
+    background-color: var(--bg-primary);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    margin: 0;
+    word-break: break-all;
+}
+
+.profile-field-container {
+    margin-bottom: 20px;
+}
+
+.profile-field-container:last-child {
+    margin-bottom: 0;
+}
+
+.profile-value-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    justify-content: space-between;
+}
+
+.profile-value-row .profile-value {
+    flex: 1;
+    margin: 0;
+}
+
+.profile-edit-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.profile-edit-row input,
+.profile-edit-row .input-wrapper {
+    flex: 1;
+}
+
+.profile-icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-color);
+    padding: 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.profile-icon-btn:hover:not(:disabled) {
+    background-color: var(--bg-secondary);
+    transform: scale(1.1);
+}
+
+.profile-icon-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.profile-icon-btn.save-btn {
+    color: #10b981;
+}
+
+.profile-icon-btn.save-btn:hover:not(:disabled) {
+    background-color: rgba(16, 185, 129, 0.1);
+}
+
+.profile-icon-btn.cancel-btn {
+    color: #ef4444;
+}
+
+.profile-icon-btn.cancel-btn:hover:not(:disabled) {
+    background-color: rgba(239, 68, 68, 0.1);
+}
+
+.profile-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.profile-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.profile-actions button {
+    flex: 1;
+}
+
+@media (max-width: 600px) {
+    .profile-actions {
+        flex-direction: column;
+    }
+    
+    .profile-edit-row {
+        flex-wrap: wrap;
+    }
+    
+    .profile-edit-row input,
+    .profile-edit-row .input-wrapper {
+        min-width: 0;
+    }
+}
+
 @media (max-width: 600px) {
     .settings-card {
         padding: 20px;

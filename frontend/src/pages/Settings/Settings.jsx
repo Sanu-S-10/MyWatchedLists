@@ -8,7 +8,7 @@ import Button from '../../components/UI/Button';
 import Input from '../../components/UI/Input';
 import ConfirmModal from '../../components/UI/ConfirmModal';
 import ClearHistoryModal from '../../components/UI/ClearHistoryModal';
-import { Palette, Download, Shield, Upload } from 'lucide-react';
+import { User, Palette, Download, Shield, Upload, Edit2, Check, X } from 'lucide-react';
 import './Settings.css';
 
 // TMDB Genre ID mapping as fallback
@@ -39,6 +39,10 @@ const Settings = () => {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [isUpdatingAuth, setIsUpdatingAuth] = useState(false);
+    const [isEditingProfile, setIsEditingProfile] = useState(false);
+    const [editUsername, setEditUsername] = useState(user?.username || '');
+    const [editEmail, setEditEmail] = useState(user?.email || '');
+    const [isSavingProfile, setIsSavingProfile] = useState(false);
     const [importFile, setImportFile] = useState(null);
     const [isImporting, setIsImporting] = useState(false);
     const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
@@ -76,6 +80,61 @@ const Settings = () => {
             addToast('Failed to update password', 'error');
         } finally {
             setIsUpdatingAuth(false);
+        }
+    };
+
+    const handleEditProfile = () => {
+        setEditUsername(user?.username || '');
+        setEditEmail(user?.email || '');
+        setIsEditingProfile(true);
+    };
+
+    const handleCancelEdit = () => {
+        setIsEditingProfile(false);
+        setEditUsername(user?.username || '');
+        setEditEmail(user?.email || '');
+    };
+
+    const handleSaveProfile = async (e) => {
+        if (e && e.preventDefault) {
+            e.preventDefault();
+        }
+        
+        if (!editUsername.trim()) {
+            return addToast('Username cannot be empty', 'error');
+        }
+        if (!editEmail.trim()) {
+            return addToast('Email cannot be empty', 'error');
+        }
+
+        setIsSavingProfile(true);
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.put(
+                'http://localhost:3000/api/users/profile',
+                {
+                    username: editUsername.trim(),
+                    email: editEmail.trim()
+                },
+                {
+                    headers: { Authorization: `Bearer ${token}` }
+                }
+            );
+
+            if (response.data.success) {
+                addToast('Profile updated successfully', 'success');
+                setIsEditingProfile(false);
+                // Store the updated user info - you may need to refetch user from context
+                // or update the auth context manually
+                window.location.reload(); // Reload to get fresh user data
+            } else {
+                addToast(response.data.message || 'Failed to update profile', 'error');
+            }
+        } catch (error) {
+            const errorMsg = error.response?.data?.message || error.message || 'Failed to update profile';
+            addToast(errorMsg, 'error');
+        } finally {
+            setIsSavingProfile(false);
         }
     };
 
@@ -169,14 +228,88 @@ The Matrix,movie,5,1999,Mind-bending classic,`;
             const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
             if (!API_KEY) return null;
 
-            const searchType = type.toLowerCase() === 'movie' ? 'movie' : 'tv';
-            const query = year ? `${title} ${year}` : title;
-            
-            const { data } = await axios.get(
-                `https://api.themoviedb.org/3/search/${searchType}?api_key=${API_KEY}&query=${encodeURIComponent(query)}`
+            const expectedType = type.toLowerCase() === 'movie' ? 'movie' : 'tv';
+            const normalizeTitle = (t) => t.toLowerCase().replace(/[^\w\s]/g, '').trim();
+            const normalizedInput = normalizeTitle(title);
+
+            // Strategy 1: Search with title + year if available
+            let allResults = [];
+            try {
+                const query1 = year ? `${title} ${year}` : title;
+                const { data: data1 } = await axios.get(
+                    `https://api.themoviedb.org/3/search/multi?api_key=${API_KEY}&query=${encodeURIComponent(query1)}`
+                );
+                allResults = data1.results || [];
+            } catch (e) {
+                console.error('Search attempt 1 failed:', e);
+            }
+
+            // Strategy 2: If first search returned nothing, try without year
+            if ((allResults.length === 0 || !allResults.find(r => r.media_type === expectedType)) && year) {
+                try {
+                    const { data: data2 } = await axios.get(
+                        `https://api.themoviedb.org/3/search/multi?api_key=${API_KEY}&query=${encodeURIComponent(title)}`
+                    );
+                    allResults = data2.results || [];
+                } catch (e) {
+                    console.error('Search attempt 2 failed:', e);
+                }
+            }
+
+            // Strategy 3: Try searching without special characters if still no results
+            if ((allResults.length === 0 || !allResults.find(r => r.media_type === expectedType)) && title.match(/[^\w\s]/)) {
+                try {
+                    const cleanTitle = title.replace(/[^\w\s]/g, '').trim();
+                    const { data: data3 } = await axios.get(
+                        `https://api.themoviedb.org/3/search/multi?api_key=${API_KEY}&query=${encodeURIComponent(cleanTitle)}`
+                    );
+                    allResults = data3.results || [];
+                } catch (e) {
+                    console.error('Search attempt 3 failed:', e);
+                }
+            }
+
+            if (allResults.length === 0) return null;
+
+            // Filter to requested type first
+            let validResults = allResults.filter(
+                (item) => item.media_type === expectedType && (item.title || item.name)
             );
 
-            return data.results?.[0] || null;
+            // If no exact type match found but results exist, be less strict
+            if (validResults.length === 0) {
+                validResults = allResults.filter((item) => item.title || item.name);
+                if (validResults.length === 0) return null;
+            }
+
+            // Try exact match first
+            const exactMatch = validResults.find(item => {
+                const itemTitle = normalizeTitle(item.title || item.name);
+                return itemTitle === normalizedInput;
+            });
+
+            if (exactMatch) return exactMatch;
+
+            // Try partial match (contains all words)
+            const inputWords = normalizedInput.split(/\s+/);
+            const partialMatch = validResults.find(item => {
+                const itemTitle = normalizeTitle(item.title || item.name);
+                return inputWords.every(word => itemTitle.includes(word));
+            });
+
+            if (partialMatch) return partialMatch;
+
+            // If year specified, try year matching
+            if (year) {
+                const yearMatch = validResults.find(item => {
+                    const itemYear = (item.release_date || item.first_air_date || '').substring(0, 4);
+                    return String(year) === itemYear;
+                });
+                if (yearMatch) return yearMatch;
+            }
+
+            // Return first result (best match by TMDB relevance)
+            return validResults[0];
         } catch (error) {
             console.error('TMDB search error:', error);
             return null;
@@ -197,6 +330,51 @@ The Matrix,movie,5,1999,Mind-bending classic,`;
         } catch (error) {
             console.error('TMDB fetch error:', error);
             return null;
+        }
+    };
+
+    const fetchAiredEpisodesForSeries = async (tmdbId, fullDetails) => {
+        try {
+            const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
+            if (!API_KEY || !fullDetails?.seasons) return { watchedEpisodes: [], totalWatchTime: 0, episodeCount: 0 };
+
+            const standardSeasons = fullDetails.seasons.filter(s => s.season_number > 0);
+            const today = new Date();
+
+            // Fetch all season details
+            const seasonPromises = standardSeasons.map(s =>
+                axios.get(`https://api.themoviedb.org/3/tv/${tmdbId}/season/${s.season_number}?api_key=${API_KEY}`)
+                    .then(res => res.data)
+                    .catch(() => null)
+            );
+
+            const resolvedSeasons = (await Promise.all(seasonPromises)).filter(Boolean);
+
+            // Collect aired episodes
+            const airedEpisodes = [];
+            let totalWatchTime = 0;
+            const episodeDuration = fullDetails.episode_run_time?.[0] || 45;
+
+            resolvedSeasons.forEach(season => {
+                if (season.episodes) {
+                    season.episodes.forEach(ep => {
+                        // Only include episodes that have aired
+                        if (ep.air_date && new Date(ep.air_date) <= today) {
+                            airedEpisodes.push(`S${ep.season_number}E${ep.episode_number}`);
+                            totalWatchTime += ep.runtime || episodeDuration;
+                        }
+                    });
+                }
+            });
+
+            return {
+                watchedEpisodes: airedEpisodes,
+                totalWatchTime: totalWatchTime,
+                episodeCount: airedEpisodes.length
+            };
+        } catch (error) {
+            console.error('Error fetching aired episodes:', error);
+            return { watchedEpisodes: [], totalWatchTime: 0, episodeCount: 0 };
         }
     };
 
@@ -294,7 +472,7 @@ The Matrix,movie,5,1999,Mind-bending classic,`;
                     const fullDetails = await fetchFullDetails(searchResult.id, row.type);
                     
                     // Detect content type (anime, animation, or live_action)
-                    const subType = detectContentType(fullDetails, row);
+                    const subType = detectContentType(fullDetails || {}, row);
 
                     // Ensure genres are always included - use fullDetails genres or fallback to genre_ids
                     let genresArray = fullDetails?.genres || [];
@@ -311,12 +489,12 @@ The Matrix,movie,5,1999,Mind-bending classic,`;
                         tmdbId: searchResult.id,
                         mediaType: isMovie ? 'movie' : 'series',
                         subType: subType,
-                        title: searchResult.title || searchResult.name,
-                        posterPath: searchResult.poster_path,
+                        title: searchResult.title || searchResult.name || row.title,
+                        posterPath: searchResult.poster_path || '',
                         originCountry: isMovie
                             ? fullDetails?.production_countries?.[0]?.iso_3166_1 || ''
                             : fullDetails?.origin_country?.[0] || '',
-                        releaseDate: searchResult.release_date || searchResult.first_air_date,
+                        releaseDate: searchResult.release_date || searchResult.first_air_date || '',
                         genres: genresArray,
                         rating: row.rating ? parseInt(row.rating) : 0,
                         userNotes: row.notes || '',
@@ -327,10 +505,15 @@ The Matrix,movie,5,1999,Mind-bending classic,`;
                     if (isMovie) {
                         payload.watchTimeMinutes = fullDetails?.runtime || 120;
                     } else {
-                        payload.episodes = fullDetails?.number_of_episodes || 0;
+                        // Fetch all aired episodes for series
+                        const airedData = await fetchAiredEpisodesForSeries(searchResult.id, fullDetails);
+                        
+                        payload.episodes = airedData.episodeCount;
                         payload.seasons = fullDetails?.number_of_seasons || 1;
                         payload.episodeDuration = fullDetails?.episode_run_time?.[0] || 45;
-                        payload.watchTimeMinutes = 0;
+                        payload.watchTimeMinutes = airedData.totalWatchTime;
+                        payload.watchedSeasons = [];
+                        payload.watchedEpisodes = airedData.watchedEpisodes;
                     }
 
                     const result = await addItem(payload);
@@ -340,11 +523,12 @@ The Matrix,movie,5,1999,Mind-bending classic,`;
                         results.stats[subType]++;
                     } else {
                         results.failed++;
-                        results.errors.push(`Row ${i + 2}: ${result.message}`);
+                        results.errors.push(`Row ${i + 2}: ${result.message || 'Failed to add item'}`);
                     }
                 } catch (error) {
                     results.failed++;
-                    results.errors.push(`Row ${i + 2}: ${error.message}`);
+                    results.errors.push(`Row ${i + 2}: Error adding item - ${error.message || 'Unknown error'}`);
+                    console.error('Bulk import error at row', i + 2, error);
                 }
 
                 setImportProgress(prev => ({ ...prev, current: prev.current + 1 }));
@@ -374,6 +558,76 @@ The Matrix,movie,5,1999,Mind-bending classic,`;
                 </div>
 
                 <div className="settings-grid">
+                <div className="settings-card">
+                    <div className="settings-card-header">
+                        <User className="settings-icon" size={24} />
+                        <h2>Profile</h2>
+                    </div>
+                    <p className="settings-desc">View and manage your account information.</p>
+
+                    <div className="profile-info">
+                        <div className="profile-field-container">
+                            <div className="profile-field">
+                                <label>Username</label>
+                                {isEditingProfile ? (
+                                    <div className="profile-edit-row">
+                                        <Input
+                                            type="text"
+                                            placeholder="Enter username"
+                                            value={editUsername}
+                                            onChange={(e) => setEditUsername(e.target.value)}
+                                            required
+                                        />
+                                        <button className="profile-icon-btn save-btn" title="Save" onClick={handleSaveProfile} disabled={isSavingProfile}>
+                                            <Check size={20} />
+                                        </button>
+                                        <button className="profile-icon-btn cancel-btn" title="Cancel" onClick={handleCancelEdit} disabled={isSavingProfile}>
+                                            <X size={20} />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="profile-value-row">
+                                        <p className="profile-value">{user?.username || 'Not available'}</p>
+                                        <button className="profile-icon-btn" title="Edit" onClick={handleEditProfile}>
+                                            <Edit2 size={18} />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="profile-field-container">
+                            <div className="profile-field">
+                                <label>Email</label>
+                                {isEditingProfile ? (
+                                    <div className="profile-edit-row">
+                                        <Input
+                                            type="email"
+                                            placeholder="Enter email"
+                                            value={editEmail}
+                                            onChange={(e) => setEditEmail(e.target.value)}
+                                            required
+                                        />
+                                        <button className="profile-icon-btn save-btn" title="Save" onClick={handleSaveProfile} disabled={isSavingProfile}>
+                                            <Check size={20} />
+                                        </button>
+                                        <button className="profile-icon-btn cancel-btn" title="Cancel" onClick={handleCancelEdit} disabled={isSavingProfile}>
+                                            <X size={20} />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="profile-value-row">
+                                        <p className="profile-value">{user?.email || 'Not available'}</p>
+                                        <button className="profile-icon-btn" title="Edit" onClick={handleEditProfile}>
+                                            <Edit2 size={18} />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div className="settings-card">
                     <div className="settings-card-header">
                         <Palette className="settings-icon" size={24} />

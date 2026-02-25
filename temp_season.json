@@ -1,0 +1,29 @@
+{
+  "feature": "Profile Inline Edit in Settings",
+  "description": "Users can now edit their username and email with pencil icons that appear on each field",
+  "functionality": {
+    "view_mode": {
+      "display": "Username and Email fields with pencil (Edit2) icon on the right",
+      "action": "Click pencil icon to enter edit mode"
+    },
+    "edit_mode": {
+      "display": "Input field with green checkmark (save) and red X (cancel) icons on the right",
+      "save_icon": "Green checkmark icon - saves the changes",
+      "cancel_icon": "Red X icon - discards changes and returns to view mode",
+      "validation": "All validation happens before save"
+    }
+  },
+  "icons_used": {
+    "edit": "Edit2 (lucide-react)",
+    "save": "Check (lucide-react)",
+    "cancel": "X (lucide-react)",
+    "profile": "User (lucide-react)"
+  },
+  "styling": {
+    "profile_value_row": "Displays value with pencil icon on the right",
+    "profile_edit_row": "Displays input field with save/cancel icons on the right",
+    "profile_icon_btn": "Icon buttons with hover effects and disabled state",
+    "save_btn": "Green colored with hover background",
+    "cancel_btn": "Red colored with hover background"
+  }
+}

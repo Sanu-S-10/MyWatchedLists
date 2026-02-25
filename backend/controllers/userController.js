@@ -74,13 +74,33 @@ const getUserProfile = async (req, res) => {
     }
 };
 
-// @desc    Update user preferences (theme)
+// @desc    Update user preferences (theme) and profile (username, email)
 // @route   PUT /api/users/profile
 // @access  Private
 const updateUserProfile = async (req, res) => {
     const user = await User.findById(req.user._id);
 
     if (user) {
+        // Update username if provided
+        if (req.body.username) {
+            // Check if new username is already taken by another user
+            const existingUser = await User.findOne({ username: req.body.username, _id: { $ne: user._id } });
+            if (existingUser) {
+                return res.status(400).json({ success: false, message: 'Username already taken' });
+            }
+            user.username = req.body.username;
+        }
+
+        // Update email if provided
+        if (req.body.email) {
+            // Check if new email is already taken by another user
+            const existingUser = await User.findOne({ email: req.body.email, _id: { $ne: user._id } });
+            if (existingUser) {
+                return res.status(400).json({ success: false, message: 'Email already in use' });
+            }
+            user.email = req.body.email;
+        }
+
         // Ensure preferences object exists
         if (!user.preferences) {
             user.preferences = {};
@@ -96,6 +116,7 @@ const updateUserProfile = async (req, res) => {
         const updatedUser = await user.save();
 
         res.json({
+            success: true,
             _id: updatedUser._id,
             username: updatedUser.username,
             email: updatedUser.email,
@@ -103,7 +124,7 @@ const updateUserProfile = async (req, res) => {
             token: generateToken(updatedUser._id),
         });
     } else {
-        res.status(404).json({ message: 'User not found' });
+        res.status(404).json({ success: false, message: 'User not found' });
     }
 };
 
