@@ -12,10 +12,10 @@ import './Dashboard.css';
 const COLORS = ['var(--accent-color)', 'var(--warning-color)', 'var(--success-color)', 'var(--danger-color)', '#8884d8'];
 
 const formatTime = (totalMinutes) => {
-    if (!totalMinutes) return { value: 0, unit: 'hrs', subValue: 0, subUnit: '' };
+    if (!totalMinutes) return { value: 0, unit: 'hrs', subValue: 0, subUnit: '', thirdValue: 0, thirdUnit: '' };
 
     if (totalMinutes < 60) {
-        return { value: totalMinutes, unit: 'min', subValue: 0, subUnit: '' };
+        return { value: totalMinutes, unit: 'min', subValue: 0, subUnit: '', thirdValue: 0, thirdUnit: '' };
     }
 
     const hours = Math.floor(totalMinutes / 60);
@@ -24,10 +24,10 @@ const formatTime = (totalMinutes) => {
     if (hours >= 24) {
         const days = Math.floor(hours / 24);
         const remainingHours = hours % 24;
-        return { value: days, unit: 'days', subValue: remainingHours, subUnit: 'hrs' };
+        return { value: days, unit: 'days', subValue: remainingHours, subUnit: 'hrs', thirdValue: minutes, thirdUnit: 'min' };
     }
 
-    return { value: hours, unit: 'hrs', subValue: minutes, subUnit: 'min' };
+    return { value: hours, unit: 'hrs', subValue: minutes, subUnit: 'min', thirdValue: 0, thirdUnit: '' };
 };
 
 const formatTimeStr = (totalMinutes) => {
@@ -40,7 +40,10 @@ const formatTimeStr = (totalMinutes) => {
     if (hours >= 24) {
         const days = Math.floor(hours / 24);
         const remainingHours = hours % 24;
-        return remainingHours > 0 ? `${days} days ${remainingHours} hrs` : `${days} days`;
+        let str = `${days} days`;
+        if (remainingHours > 0) str += ` ${remainingHours} hrs`;
+        if (minutes > 0) str += ` ${minutes} min`;
+        return str;
     }
 
     return minutes > 0 ? `${hours} hrs ${minutes} min` : `${hours} hrs`;
@@ -146,20 +149,30 @@ const Dashboard = () => {
                     <div className="stat-icon"><Clock size={28} /></div>
                     <div className="stat-info">
                         <h4>Total Watch Time</h4>
-                        <h2>
-                            {stats.totalTime.value} <span>{stats.totalTime.unit}</span>
-                            {stats.totalTime.subValue > 0 && <span style={{ fontSize: '0.9rem', marginLeft: '4px' }}>{stats.totalTime.subValue} {stats.totalTime.subUnit}</span>}
-                        </h2>
+                        <div className="time-display">
+                            <span className="primary-time">{stats.totalTime.value}<small>{stats.totalTime.unit}</small></span>
+                            {(stats.totalTime.subValue > 0 || stats.totalTime.thirdValue > 0) && (
+                                <span className="secondary-time">
+                                    {stats.totalTime.subValue > 0 && `${stats.totalTime.subValue}${stats.totalTime.subUnit} `}
+                                    {stats.totalTime.thirdValue > 0 && `${stats.totalTime.thirdValue}${stats.totalTime.thirdUnit}`}
+                                </span>
+                            )}
+                        </div>
                     </div>
                 </div>
                 <div className="stat-card">
                     <div className="stat-icon"><Film size={28} /></div>
                     <div className="stat-info">
                         <h4>Movie Time</h4>
-                        <h2>
-                            {stats.movieTime.value} <span>{stats.movieTime.unit}</span>
-                            {stats.movieTime.subValue > 0 && <span style={{ fontSize: '0.9rem', marginLeft: '4px' }}>{stats.movieTime.subValue} {stats.movieTime.subUnit}</span>}
-                        </h2>
+                        <div className="time-display">
+                            <span className="primary-time">{stats.movieTime.value}<small>{stats.movieTime.unit}</small></span>
+                            {(stats.movieTime.subValue > 0 || stats.movieTime.thirdValue > 0) && (
+                                <span className="secondary-time">
+                                    {stats.movieTime.subValue > 0 && `${stats.movieTime.subValue}${stats.movieTime.subUnit} `}
+                                    {stats.movieTime.thirdValue > 0 && `${stats.movieTime.thirdValue}${stats.movieTime.thirdUnit}`}
+                                </span>
+                            )}
+                        </div>
                         <span>({stats.moviesCount} movies)</span>
                     </div>
                 </div>
@@ -167,10 +180,15 @@ const Dashboard = () => {
                     <div className="stat-icon"><Tv size={28} /></div>
                     <div className="stat-info">
                         <h4>Series Time</h4>
-                        <h2>
-                            {stats.seriesTime.value} <span>{stats.seriesTime.unit}</span>
-                            {stats.seriesTime.subValue > 0 && <span style={{ fontSize: '0.9rem', marginLeft: '4px' }}>{stats.seriesTime.subValue} {stats.seriesTime.subUnit}</span>}
-                        </h2>
+                        <div className="time-display">
+                            <span className="primary-time">{stats.seriesTime.value}<small>{stats.seriesTime.unit}</small></span>
+                            {(stats.seriesTime.subValue > 0 || stats.seriesTime.thirdValue > 0) && (
+                                <span className="secondary-time">
+                                    {stats.seriesTime.subValue > 0 && `${stats.seriesTime.subValue}${stats.seriesTime.subUnit} `}
+                                    {stats.seriesTime.thirdValue > 0 && `${stats.seriesTime.thirdValue}${stats.seriesTime.thirdUnit}`}
+                                </span>
+                            )}
+                        </div>
                         <span>({stats.seriesCount} series)</span>
                     </div>
                 </div>

@@ -14,6 +14,7 @@ import Dashboard from './pages/Dashboard/Dashboard';
 import ContentList from './pages/ContentList/ContentList';
 import Watch from './pages/Watch/Watch';
 import Settings from './pages/Settings/Settings';
+import AIFilter from './pages/AIFilter/AIFilter';
 
 const ProtectedRoute = ({ children }) => {
     const { user, loading } = useContext(AuthContext);
@@ -50,6 +51,7 @@ const AppRoutes = () => {
             <Route path="/documentary" element={<ProtectedRoute><ContentList type="documentary" title="My Documentary" /></ProtectedRoute>} />
             <Route path="/favorites" element={<ProtectedRoute><ContentList type="favorites" title="My Favorites" /></ProtectedRoute>} />
             <Route path="/search" element={<ProtectedRoute><SearchPage /></ProtectedRoute>} />
+            <Route path="/aifilter" element={<ProtectedRoute><AIFilter /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
         </Routes>
     );

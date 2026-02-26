@@ -6,17 +6,18 @@
     gap: 32px;
 }
 
-.page-header {
+.search-page .page-header {
     margin-bottom: 24px;
+    text-align: center;
 }
 
-.page-header h1 {
+.search-page .page-header h1 {
     font-size: 2rem;
     color: var(--text-primary);
     margin-bottom: 8px;
 }
 
-.page-header p {
+.search-page .page-header p {
     color: var(--text-secondary);
 }
 

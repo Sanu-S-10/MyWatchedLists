@@ -5,6 +5,7 @@ import {
     updateWatchItem,
     deleteWatchItem,
     clearWatchHistory,
+    aiFilterItems,
 } from '../controllers/watchItemController.js';
 import { protect } from '../middleware/authMiddleware.js';
 
@@ -15,6 +16,9 @@ router
     .get(protect, getWatchHistory)
     .post(protect, addWatchItem)
     .delete(protect, clearWatchHistory);
+router
+    .route('/ai-filter')
+    .post(protect, aiFilterItems);
 router
     .route('/:id')
     .put(protect, updateWatchItem)

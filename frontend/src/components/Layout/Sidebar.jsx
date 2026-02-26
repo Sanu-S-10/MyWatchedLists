@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Film, Tv, Heart, Search, Settings, LogOut, Disc, Smile } from 'lucide-react';
+import { Home, Film, Tv, Heart, Search, Settings, LogOut, Disc, Smile, Sparkles } from 'lucide-react';
 import { useContext } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import './Sidebar.css';
@@ -45,6 +45,9 @@ const Sidebar = () => {
                     </li>
                     <li className={isActive('/favorites') ? 'active' : ''}>
                         <Link to="/favorites"><Heart size={20} /> <span>Favorites</span></Link>
+                    </li>
+                    <li className={isActive('/aifilter') ? 'active' : ''}>
+                        <Link to="/aifilter"><Sparkles size={20} /> <span>AI Filter</span></Link>
                     </li>
                 </ul>
             </nav>
