@@ -1,4 +1,5 @@
 import { useState, useContext } from 'react';
+import axios from 'axios';
 import { ToastContext } from '../../context/ToastContext';
 import { AuthContext } from '../../context/AuthContext';
 import MediaCard from '../../components/UI/MediaCard';
@@ -35,26 +36,20 @@ const AIFilter = () => {
         setHasSearched(true);
 
         try {
-            const res = await fetch('/api/watch-history/ai-filter', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${user.token}`
-                },
-                body: JSON.stringify({ prompt })
-            });
-
-            const data = await res.json();
-
-            if (res.ok) {
-                setFilteredItems(Array.isArray(data) ? data : []);
-                if (data.length === 0) {
-                    addToast('No matching items found', 'info');
-                } else {
-                    addToast(`Found ${data.length} matching items`, 'success');
+            const { data } = await axios.post('/api/watch-history/ai-filter',
+                { prompt },
+                {
+                    headers: {
+                        Authorization: `Bearer ${user.token}`
+                    }
                 }
+            );
+
+            setFilteredItems(Array.isArray(data) ? data : []);
+            if (data.length === 0) {
+                addToast('No matching items found', 'info');
             } else {
-                throw new Error(data.message || 'Failed to filter items');
+                addToast(`Found ${data.length} matching items`, 'success');
             }
         } catch (error) {
             console.error('AI Filter Error:', error);
