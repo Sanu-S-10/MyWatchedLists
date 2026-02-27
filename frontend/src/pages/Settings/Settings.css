@@ -459,6 +459,41 @@
     flex: 1;
 }
 
+@media (max-width: 768px) {
+    .settings-page {
+        max-width: 100%;
+    }
+
+    .settings-card {
+        padding: 24px;
+    }
+
+    .theme-selector {
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 12px;
+    }
+
+    .security-form {
+        max-width: 100%;
+    }
+
+    .import-actions {
+        flex-direction: column;
+    }
+
+    .import-actions button {
+        width: 100%;
+    }
+
+    .data-actions {
+        align-items: stretch;
+    }
+
+    .data-actions button {
+        width: 100%;
+    }
+}
+
 @media (max-width: 600px) {
     .profile-actions {
         flex-direction: column;

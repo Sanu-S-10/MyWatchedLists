@@ -8,13 +8,14 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 16px;
 }
 
 .header-actions {
     display: flex;
     gap: 12px;
+    align-items: center;
 }
 
 .icon-btn {
@@ -134,6 +135,21 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 20px;
+}
+
+@media (max-width: 1024px) {
+    .grid-container {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 18px;
+    }
+
+    .filters-panel {
+        gap: 16px;
+    }
+
+    .filter-group {
+        min-width: 130px;
+    }
 }
 
 .card-wrapper {
@@ -288,6 +304,18 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
+}
+
+@media (max-width: 768px) {
+    .list-container {
+        gap: 10px;
+    }
+}
+
+@media (max-width: 600px) {
+    .list-container {
+        gap: 8px;
+    }
 }
 
 .list-item {
@@ -449,20 +477,203 @@
         font-size: 0.8rem;
         gap: 8px;
     }
-}
 
-@media (max-width: 600px) {
-    .list-item {
+    .flex-between {
         flex-direction: column;
         align-items: flex-start;
     }
 
-    .list-item-meta {
+    .header-actions {
         width: 100%;
+        justify-content: space-between;
+        flex-wrap: nowrap;
+    }
+
+    .search-box {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .title-search-input {
+        width: 100% !important;
+    }
+
+    .view-toggle {
+        gap: 2px;
+        padding: 3px;
+    }
+
+    .view-btn {
+        width: 32px;
+        height: 32px;
+    }
+
+    .icon-btn {
+        padding: 8px 12px;
+        font-size: 0.9rem;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+}
+
+@media (max-width: 600px) {
+    .list-item {
+        flex-direction: row;
+        align-items: center;
+        gap: 12px;
+        padding: 10px;
+        min-height: auto;
+    }
+
+    .list-item-poster {
+        flex-shrink: 0;
+        width: 55px;
+        height: 85px;
+        border-radius: 6px;
+    }
+
+    .list-item-content {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .list-item-content h3 {
+        margin: 0;
+        font-size: 0.95rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .list-item-meta {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        margin-bottom: 4px;
+        flex-wrap: wrap;
+    }
+
+    .meta-year,
+    .meta-type {
+        background-color: var(--bg-color);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 500;
+    }
+
+    .meta-status {
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 0.7rem;
+        text-transform: capitalize;
+        color: white;
+    }
+
+    .list-item-genres {
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+    }
+
+    .genre-tag {
+        background-color: var(--accent-color);
+        color: white;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 0.7rem;
+        font-weight: 500;
     }
 
     .list-item-actions {
+        display: flex;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+
+    .list-item-actions button {
+        width: 28px;
+        height: 28px;
+        padding: 0 !important;
+        font-size: 16px;
+    }
+
+    .edit-btn,
+    .delete-btn {
+        width: 28px;
+        height: 28px;
+    }
+
+    .filters-panel {
+        padding: 14px;
+        gap: 12px;
+    }
+
+    .filter-group {
+        min-width: 100%;
         width: 100%;
-        justify-content: flex-start;
+    }
+
+    .form-row {
+        flex-direction: column;
+    }
+
+    .filter-actions {
+        width: 100%;
+    }
+
+    .clear-filters-btn {
+        width: 100%;
+        text-align: center;
+    }
+
+    .header-actions {
+        gap: 6px;
+        width: 100%;
+        justify-content: space-between;
+        flex-wrap: nowrap;
+    }
+
+    .search-box {
+        flex: 1;
+        min-width: 0;
+        height: 36px;
+        padding: 0 8px;
+    }
+
+    .title-search-input {
+        font-size: 0.85rem;
+        width: 100% !important;
+        padding: 0 4px !important;
+    }
+
+    .view-toggle {
+        min-width: fit-content;
+        gap: 2px;
+        padding: 2px;
+    }
+
+    .view-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 0.85rem;
+    }
+
+    .icon-btn {
+        padding: 6px 8px;
+        font-size: 0.75rem;
+        white-space: nowrap;
+        flex-shrink: 0;
+        gap: 4px;
+    }
+
+    .icon-btn span {
+        display: none;
     }
 }

@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Film, Tv, Heart, Search, Settings, LogOut, Disc, Smile, Sparkles } from 'lucide-react';
+import { Home, Film, Tv, Heart, Search, Settings, LogOut, Zap, Smile, Sparkles } from 'lucide-react';
 import { useContext } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import './Sidebar.css';
@@ -38,7 +38,7 @@ const Sidebar = () => {
                         <Link to="/series"><Tv size={20} /> <span>Series</span></Link>
                     </li>
                     <li className={isActive('/anime') ? 'active' : ''}>
-                        <Link to="/anime"><Disc size={20} /> <span>Anime</span></Link>
+                        <Link to="/anime"><Zap size={20} /> <span>Anime</span></Link>
                     </li>
                     <li className={isActive('/animation') ? 'active' : ''}>
                         <Link to="/animation"><Smile size={20} /> <span>Animation</span></Link>

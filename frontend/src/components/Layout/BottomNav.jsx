@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, Film, Heart, Settings, LogIn } from 'lucide-react';
+import { Home, Search, Film, Heart, Settings, LogIn, Sparkles } from 'lucide-react';
 import { useContext } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import './BottomNav.css';
@@ -50,6 +50,12 @@ const BottomNav = () => {
                     <Link to="/favorites">
                         <Heart size={24} />
                         <span>Favs</span>
+                    </Link>
+                </li>
+                <li className={isActive('/aifilter') ? 'active' : ''}>
+                    <Link to="/aifilter">
+                        <Sparkles size={24} />
+                        <span>AI</span>
                     </Link>
                 </li>
                 {user ? (

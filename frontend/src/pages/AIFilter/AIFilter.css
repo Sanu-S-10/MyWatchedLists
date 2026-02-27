@@ -136,3 +136,57 @@
 .mt-4 {
     margin-top: 1.5rem;
 }
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .ai-search-container {
+        padding: 1rem;
+    }
+
+    .ai-search-form {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .ai-input-wrapper {
+        width: 100%;
+    }
+
+    .ai-search-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 1rem;
+    }
+
+    .suggestions-grid {
+        gap: 0.75rem;
+    }
+
+    .suggestion-chip {
+        padding: 0.75rem 1.25rem;
+        font-size: 0.85rem;
+    }
+
+    .suggestions-title {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .ai-search-container {
+        padding: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .suggestion-chip {
+        padding: 0.65rem 1rem;
+        font-size: 0.8rem;
+        width: 100%;
+        text-align: center;
+    }
+
+    .suggestions-grid {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}

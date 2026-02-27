@@ -264,6 +264,45 @@ textarea:focus {
     gap: 12px;
 }
 
+@media (max-width: 768px) {
+    .modal-content {
+        max-width: 95%;
+    }
+
+    .modal-header {
+        padding: 20px;
+        gap: 16px;
+    }
+
+    .modal-poster {
+        width: 100px;
+    }
+
+    .modal-info h2 {
+        font-size: 1.3rem;
+    }
+
+    .modal-body {
+        padding: 20px;
+        gap: 16px;
+    }
+
+    .form-row {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .modal-footer {
+        padding: 14px 20px;
+        flex-wrap: wrap;
+    }
+
+    .modal-footer button {
+        flex: 1;
+        min-width: 120px;
+    }
+}
+
 @media (max-width: 600px) {
     .modal-header {
         flex-direction: column;
@@ -271,5 +310,10 @@ textarea:focus {
 
     .modal-poster {
         width: 100px;
+    }
+
+    .modal-footer button {
+        width: 100%;
+        min-width: unset;
     }
 }

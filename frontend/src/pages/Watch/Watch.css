@@ -50,3 +50,47 @@
     font-size: 0.85rem;
     color: var(--text-secondary);
 }
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .watch-grid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+    }
+}
+
+@media (max-width: 768px) {
+    .watch-grid {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 14px;
+    }
+
+    .watch-card {
+        padding: 14px;
+        gap: 12px;
+    }
+
+    .watch-icon {
+        width: 42px;
+        height: 42px;
+    }
+
+    .watch-card-body h3 {
+        font-size: 0.95rem;
+    }
+
+    .watch-card-body p {
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .watch-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .watch-card {
+        padding: 16px;
+    }
+}

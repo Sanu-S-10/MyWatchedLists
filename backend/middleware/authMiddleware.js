@@ -10,7 +10,10 @@ const protect = async (req, res, next) => {
     ) {
         try {
             token = req.headers.authorization.split(' ')[1];
-            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+            if (!process.env.JWT_SECRET) {
+                return res.status(500).json({ message: 'Server misconfigured: JWT_SECRET missing' });
+            }
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
             req.user = await User.findById(decoded.id).select('-password');
             next();

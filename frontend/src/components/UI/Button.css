@@ -96,3 +96,28 @@
         transform: rotate(360deg);
     }
 }
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .btn-lg {
+        padding: 12px 20px;
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .btn-md {
+        padding: 10px 14px;
+        font-size: 0.95rem;
+    }
+
+    .btn-lg {
+        padding: 12px 18px;
+        font-size: 0.95rem;
+    }
+
+    .btn-sm {
+        padding: 6px 10px;
+        font-size: 0.8rem;
+    }
+}

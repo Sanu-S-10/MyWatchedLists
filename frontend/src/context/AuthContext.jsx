@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('userInfo');
     };
 
-    const updatePreferences = async (theme) => {
+    const updateProfile = async (updates) => {
         if (!user || !user.token) {
             throw new Error('User not authenticated');
         }
@@ -42,17 +42,22 @@ export const AuthProvider = ({ children }) => {
             },
         };
         try {
-            const { data } = await axios.put('/api/users/profile', { theme }, config);
+            const { data } = await axios.put('/api/users/profile', updates, config);
             setUser(data);
             localStorage.setItem('userInfo', JSON.stringify(data));
+            return data;
         } catch (error) {
-            console.error('Error updating preferences:', error.response?.data || error.message);
+            console.error('Error updating profile:', error.response?.data || error.message);
             throw error;
         }
     };
 
+    const updatePreferences = async (theme) => {
+        return updateProfile({ theme });
+    };
+
     return (
-        <AuthContext.Provider value={{ user, login, register, logout, updatePreferences, loading }}>
+        <AuthContext.Provider value={{ user, login, register, logout, updatePreferences, updateProfile, loading }}>
             {children}
         </AuthContext.Provider>
     );

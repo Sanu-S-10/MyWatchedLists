@@ -31,7 +31,7 @@ const themes = [
 ];
 
 const Settings = () => {
-    const { user, updatePreferences } = useContext(AuthContext);
+    const { user, updatePreferences, updateProfile } = useContext(AuthContext);
     const { theme, changeTheme } = useContext(ThemeContext);
     const { history, addItem, clearHistory } = useContext(WatchHistoryContext);
     const { addToast } = useContext(ToastContext);
@@ -69,10 +69,7 @@ const Settings = () => {
 
         setIsUpdatingAuth(true);
         try {
-            // Assuming our updatePreferences endpoint handles password if sent
-            // But we need to use an API for updating user. Right now we rely on the AuthContext logic which only takes theme.
-            // Wait, in AuthContext: updatePreferences = async (theme) ... wait, we need to adapt it. 
-            // It's fine for now, let's pretend it updates.
+            await updateProfile({ password });
             addToast('Password updated successfully', 'success');
             setPassword('');
             setConfirmPassword('');
@@ -109,27 +106,12 @@ const Settings = () => {
 
         setIsSavingProfile(true);
         try {
-            const token = localStorage.getItem('token');
-            const response = await axios.put(
-                'http://localhost:3000/api/users/profile',
-                {
-                    username: editUsername.trim(),
-                    email: editEmail.trim()
-                },
-                {
-                    headers: { Authorization: `Bearer ${token}` }
-                }
-            );
-
-            if (response.data.success) {
-                addToast('Profile updated successfully', 'success');
-                setIsEditingProfile(false);
-                // Store the updated user info - you may need to refetch user from context
-                // or update the auth context manually
-                window.location.reload(); // Reload to get fresh user data
-            } else {
-                addToast(response.data.message || 'Failed to update profile', 'error');
-            }
+            await updateProfile({
+                username: editUsername.trim(),
+                email: editEmail.trim()
+            });
+            addToast('Profile updated successfully', 'success');
+            setIsEditingProfile(false);
         } catch (error) {
             const errorMsg = error.response?.data?.message || error.message || 'Failed to update profile';
             addToast(errorMsg, 'error');
