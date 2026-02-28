@@ -21,6 +21,7 @@ const AIFilter = () => {
     const [filteredItems, setFilteredItems] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [hasSearched, setHasSearched] = useState(false);
+    const [isBasicMode, setIsBasicMode] = useState(false);
 
     // Modal states
     const [viewingItem, setViewingItem] = useState(null);
@@ -34,9 +35,10 @@ const AIFilter = () => {
 
         setIsLoading(true);
         setHasSearched(true);
+        setIsBasicMode(false);
 
         try {
-            const { data } = await axios.post('/api/watch-history/ai-filter',
+            const response = await axios.post('/api/watch-history/ai-filter',
                 { prompt },
                 {
                     headers: {
@@ -45,9 +47,18 @@ const AIFilter = () => {
                 }
             );
 
+            const { data, headers } = response;
+            const filterMode = headers['x-ai-filter-mode'];
+            const basicModeActive = filterMode === 'basic';
+            setIsBasicMode(basicModeActive);
+
             setFilteredItems(Array.isArray(data) ? data : []);
             if (data.length === 0) {
-                addToast('No matching items found', 'info');
+                if (basicModeActive) {
+                    addToast('AI quota reached. Showing basic filter mode.', 'info');
+                } else {
+                    addToast('No matching items found', 'info');
+                }
             } else {
                 addToast(`Found ${data.length} matching items`, 'success');
             }
@@ -58,6 +69,13 @@ const AIFilter = () => {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handleClear = () => {
+        setPrompt('');
+        setFilteredItems([]);
+        setHasSearched(false);
+        setIsBasicMode(false);
     };
 
     const handleDeleteRequest = (item, e) => {
@@ -112,6 +130,14 @@ const AIFilter = () => {
                         <Search size={18} className="search-icon-btn" />
                         {isLoading ? 'Filtering...' : 'Filter'}
                     </button>
+                    <button
+                        type="button"
+                        disabled={isLoading || (!prompt.trim() && !hasSearched)}
+                        className="ai-clear-btn"
+                        onClick={handleClear}
+                    >
+                        Clear
+                    </button>
                 </form>
             </div>
 
@@ -139,7 +165,10 @@ const AIFilter = () => {
             ) : hasSearched ? (
                 <div style={{ marginTop: '0' }}>
                     <div className="results-header">
-                        <h2>Results</h2>
+                        <h2>
+                            Results
+                            {isBasicMode && <span className="results-mode-badge">Basic mode</span>}
+                        </h2>
                         <span className="results-count">{filteredItems.length} items</span>
                     </div>
 
@@ -160,8 +189,17 @@ const AIFilter = () => {
                     ) : (
                         <div className="empty-state mt-4">
                             <div className="empty-state-icon">🤖</div>
-                            <h3>No matches found</h3>
-                            <p>Gemini couldn't find any items in your list matching that description.</p>
+                            {isBasicMode ? (
+                                <>
+                                    <h3>AI quota reached</h3>
+                                    <p>Advanced AI filtering is temporarily unavailable. Try a simpler prompt or retry later when quota resets.</p>
+                                </>
+                            ) : (
+                                <>
+                                    <h3>No matches found</h3>
+                                    <p>Gemini couldn't find any items in your list matching that description.</p>
+                                </>
+                            )}
                         </div>
                     )}
                 </div>

@@ -1,6 +1,6 @@
 import { useContext, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Film, Tv, Sparkles, Clapperboard, Layers, BookOpen } from 'lucide-react';
+import { Film, Tv, Sparkles, Clapperboard, Layers, BookOpen, Zap } from 'lucide-react';
 import { WatchHistoryContext } from '../../context/WatchHistoryContext';
 import './Watch.css';
 
@@ -50,7 +50,7 @@ const Watch = () => {
                 </Link>
 
                 <Link to="/anime" className="watch-card">
-                    <div className="watch-icon"><Sparkles size={28} /></div>
+                    <div className="watch-icon"><Zap size={28} /></div>
                     <div className="watch-card-body">
                         <h3>My Anime</h3>
                         <p>{counts.anime} titles</p>
