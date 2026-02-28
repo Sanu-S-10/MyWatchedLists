@@ -24,6 +24,8 @@ const MediaCard = ({ item, onClick }) => {
     };
 
     const seriesStatus = getSeriesStatus();
+    const isAnimeSeries = item.mediaType === 'series' && item.subType === 'anime';
+    const isAnimatedSeries = item.mediaType === 'series' && item.subType === 'animation';
 
     return (
         <div className="media-card" onClick={() => onClick && onClick(item)}>
@@ -49,8 +51,19 @@ const MediaCard = ({ item, onClick }) => {
                         {item.releaseDate ? item.releaseDate.substring(0, 4) : item.first_air_date ? item.first_air_date.substring(0, 4) : 'N/A'}
                     </span>
                     <span className="media-type">
-                        {item.subType === 'anime' ? 'Anime ' : item.subType === 'animation' ? 'Animated ' : ''}
-                        {item.mediaType === 'movie' ? 'Movie' : 'Series'}
+                        {(isAnimeSeries || isAnimatedSeries) ? (
+                            <>
+                                <span className="media-type-desktop">
+                                    {isAnimeSeries ? 'Anime Series' : 'Animated Series'}
+                                </span>
+                                <span className="media-type-mobile">Series</span>
+                            </>
+                        ) : (
+                            <>
+                                {item.subType === 'anime' ? 'Anime ' : item.subType === 'animation' ? 'Animated ' : ''}
+                                {item.mediaType === 'movie' ? 'Movie' : 'Series'}
+                            </>
+                        )}
                     </span>
                 </div>
 

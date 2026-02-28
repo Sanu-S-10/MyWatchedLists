@@ -59,7 +59,7 @@
 .media-info {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
 }
 
 .media-title {
@@ -84,6 +84,10 @@
     padding: 2px 8px;
     border-radius: 4px;
     font-size: 0.75rem;
+}
+
+.media-type-mobile {
+    display: none;
 }
 
 .media-rating {
@@ -120,37 +124,54 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
+    .media-card {
+        gap: 8px;
+    }
+
     .media-card:hover {
         transform: translateY(-4px);
     }
 
     .media-title {
-        font-size: 0.95rem;
+        font-size: 0.85rem;
     }
 
     .media-meta {
-        font-size: 0.8rem;
+        font-size: 0.75rem;
     }
 
     .media-type {
         font-size: 0.7rem;
         padding: 2px 6px;
+        display: none;
+    }
+
+    .media-type-desktop {
+        display: none;
+    }
+
+    .media-type-mobile {
+        display: inline;
     }
 }
 
 @media (max-width: 480px) {
     .media-title {
-        font-size: 0.9rem;
+        font-size: 0.8rem;
     }
 
     .media-meta {
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         flex-direction: column;
-        gap: 4px;
+        gap: 2px;
     }
 
     .status-badge {
-        font-size: 0.7rem;
-        padding: 3px 6px;
+        font-size: 0.65rem;
+        padding: 2px 4px;
+    }
+
+    .media-rating {
+        gap: 1px;
     }
 }

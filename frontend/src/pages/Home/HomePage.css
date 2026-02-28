@@ -648,6 +648,10 @@
         gap: 20px;
     }
 
+    .nav-links {
+        display: none;
+    }
+
     .hero-section {
         padding: 60px 20px;
     }

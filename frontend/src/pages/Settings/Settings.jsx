@@ -1,5 +1,6 @@
 import { useState, useContext } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { ThemeContext } from '../../context/ThemeContext';
 import { WatchHistoryContext } from '../../context/WatchHistoryContext';
@@ -8,7 +9,7 @@ import Button from '../../components/UI/Button';
 import Input from '../../components/UI/Input';
 import ConfirmModal from '../../components/UI/ConfirmModal';
 import ClearHistoryModal from '../../components/UI/ClearHistoryModal';
-import { User, Palette, Download, Shield, Upload, Edit2, Check, X } from 'lucide-react';
+import { User, Palette, Download, Shield, Upload, Edit2, Check, X, LogOut } from 'lucide-react';
 import './Settings.css';
 
 // TMDB Genre ID mapping as fallback
@@ -31,7 +32,8 @@ const themes = [
 ];
 
 const Settings = () => {
-    const { user, updatePreferences, updateProfile } = useContext(AuthContext);
+    const navigate = useNavigate();
+    const { user, updatePreferences, updateProfile, logout } = useContext(AuthContext);
     const { theme, changeTheme } = useContext(ThemeContext);
     const { history, addItem, clearHistory } = useContext(WatchHistoryContext);
     const { addToast } = useContext(ToastContext);
@@ -49,6 +51,11 @@ const Settings = () => {
     const [importResults, setImportResults] = useState(null);
     const [isClearModalOpen, setIsClearModalOpen] = useState(false);
     const [isClearingHistory, setIsClearingHistory] = useState(false);
+
+    const handleLogout = () => {
+        logout();
+        navigate('/');
+    };
 
     const handleThemeChange = async (newTheme) => {
         changeTheme(newTheme);
@@ -792,6 +799,18 @@ The Matrix,movie,5,1999,Mind-bending classic,`;
                             <p>This permanently removes all movies and series from your account.</p>
                         </div>
                     </div>
+                </div>
+
+                <div className="settings-card mobile-logout-card">
+                    <div className="settings-card-header">
+                        <LogOut className="settings-icon" size={24} />
+                        <h2>Account</h2>
+                    </div>
+                    <p className="settings-desc">Sign out from your account on this device.</p>
+
+                    <Button variant="danger" onClick={handleLogout} fullWidth>
+                        <LogOut size={16} /> Logout
+                    </Button>
                 </div>
 
                 </div>
