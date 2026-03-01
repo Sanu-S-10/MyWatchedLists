@@ -255,11 +255,19 @@ const Dashboard = () => {
                     <div className="chart-container">
                         {stats.yearData.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={stats.yearData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
-                                    <XAxis dataKey="year" stroke="var(--text-secondary)" />
-                                    <YAxis stroke="var(--text-secondary)" />
+                                <LineChart data={stats.yearData} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
+                                    <XAxis
+                                        dataKey="year"
+                                        stroke="var(--text-secondary)"
+                                        angle={-45}
+                                        textAnchor="end"
+                                        height={50}
+                                        tick={{ fontSize: 12 }}
+                                        minTickGap={20}
+                                    />
+                                    <YAxis stroke="var(--text-secondary)" width={40} tick={{ fontSize: 12 }} />
                                     <Tooltip contentStyle={{ backgroundColor: 'var(--bg-secondary)', border: 'none', borderRadius: '8px' }} formatter={(value, name, props) => [formatTimeStr(props.payload.time), 'Time']} />
-                                    <Line type="monotone" dataKey="hoursFloat" stroke="var(--success-color)" strokeWidth={3} dot={{ r: 5, fill: 'var(--success-color)' }} />
+                                    <Line type="monotone" dataKey="hoursFloat" stroke="var(--success-color)" strokeWidth={3} dot={{ r: 4, fill: 'var(--success-color)' }} activeDot={{ r: 6 }} />
                                 </LineChart>
                             </ResponsiveContainer>
                         ) : (

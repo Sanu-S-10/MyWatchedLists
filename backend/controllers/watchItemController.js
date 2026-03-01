@@ -222,7 +222,7 @@ const aiFilterItems = async (req, res) => {
 
         // Check if user is asking about production company
         const isProductionCompanyQuery = isLikelyProductionCompanyQuery(prompt);
-        
+
         if (isProductionCompanyQuery) {
             return await filterByProductionCompany(prompt, watchHistory, res);
         }
@@ -243,7 +243,13 @@ const aiFilterItems = async (req, res) => {
         }
 
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+        const modelsToTry = [
+            "gemini-2.5-flash",
+            "gemini-3-flash",
+            "gemini-2.5-flash-lite",
+            "gemma-3-27b"
+        ];
 
         const systemInstruction = `You are a movie and TV series expert. The user wants to filter their personal watched list based on the prompt: "${prompt}". 
 Here is their watched list in JSON format: ${JSON.stringify(validItems)}.
@@ -251,16 +257,26 @@ Your task is to return ONLY a JSON array of "_id" strings from the provided list
 Do NOT output any markdown blocks, explanations, or other text. ONLY the raw JSON array of strings. If none match, return [].`;
 
         let result;
-        try {
-            result = await model.generateContent(systemInstruction);
-        } catch (error) {
-            if (isQuotaOrRateLimitError(error)) {
-                console.warn('Gemini quota/rate limit reached, using heuristic fallback.');
-                res.set('X-AI-Filter-Mode', 'basic');
-                return res.json(heuristicFallback);
+        for (const modelName of modelsToTry) {
+            try {
+                const model = genAI.getGenerativeModel({ model: modelName });
+                result = await model.generateContent(systemInstruction);
+                break; // Break on success
+            } catch (error) {
+                if (isQuotaOrRateLimitError(error)) {
+                    console.warn(`Model ${modelName} quota/rate limit reached, trying next model...`);
+                    continue;
+                }
+                throw error;
             }
-            throw error;
         }
+
+        if (!result) {
+            console.warn('All available AI models exhausted or quota reached, using heuristic fallback.');
+            res.set('X-AI-Filter-Mode', 'basic');
+            return res.json(heuristicFallback);
+        }
+
         let textResult = result.response.text().trim();
 
         // Clean up markdown optionally returned by Gemini
@@ -313,7 +329,7 @@ const filterByProductionCompany = async (prompt, watchHistory, res) => {
 
         // Extract production company name from prompt - handle multiple patterns
         let companyName = '';
-        
+
         // Pattern 1: "production company XXXX", "produced by XXXX", etc.
         const companyNameMatch = prompt.match(/(?:production company|produced by|production from|studio|production studio|distributed by)\s+(.+?)(?:\s+movies?|\s+series?|\s+tv|\s+shows?|\s+films?|$)/i);
         if (companyNameMatch) {
@@ -346,13 +362,13 @@ const filterByProductionCompany = async (prompt, watchHistory, res) => {
         // Helper function to check if a production company matches our target
         const isTargetCompany = (productionCompany) => {
             if (!productionCompany) return false;
-            
+
             const pcName = productionCompany.name ? productionCompany.name.toLowerCase().trim() : '';
             const pcId = productionCompany.id;
-            
+
             // Exact ID match is most reliable
             if (pcId === companyId) return true;
-            
+
             // Normalize company names for better matching
             const normalizeCompanyName = (name) => {
                 return name.toLowerCase()
@@ -362,13 +378,13 @@ const filterByProductionCompany = async (prompt, watchHistory, res) => {
                     .replace(/studios?$/i, '')  // remove 'studio' or 'studios' suffix
                     .trim();
             };
-            
+
             const normalizedPcName = normalizeCompanyName(pcName);
             const normalizedTarget = normalizeCompanyName(companyNameLower);
-            
+
             // Check for exact match after normalization
             if (normalizedPcName === normalizedTarget) return true;
-            
+
             // Check if names match closely (accounting for variations)
             if (normalizedTarget.includes(normalizedPcName) || normalizedPcName.includes(normalizedTarget)) {
                 // Only accept if both are significant lengths (avoid false positives)
@@ -376,7 +392,7 @@ const filterByProductionCompany = async (prompt, watchHistory, res) => {
                     return true;
                 }
             }
-            
+
             return false;
         };
 
@@ -384,23 +400,23 @@ const filterByProductionCompany = async (prompt, watchHistory, res) => {
 
         // Check each item in watch history individually against TMDB
         for (const item of watchHistory) {
-                        // Skip if media type filter is specified and doesn't match
-                        if (mediaTypeFilter && item.mediaType !== mediaTypeFilter) {
-                            continue;
-                        }
+            // Skip if media type filter is specified and doesn't match
+            if (mediaTypeFilter && item.mediaType !== mediaTypeFilter) {
+                continue;
+            }
 
             try {
                 const itemUrl = `https://api.themoviedb.org/3/${item.mediaType === 'movie' ? 'movie' : 'tv'}/${item.tmdbId}?api_key=${TMDB_API_KEY}&append_to_response=production_companies`;
                 const itemRes = await fetch(itemUrl);
-                
+
                 if (!itemRes.ok) continue;
-                
+
                 const itemData = await itemRes.json();
 
                 if (itemData.production_companies && Array.isArray(itemData.production_companies)) {
                     // Check if any production company matches our target
                     const hasTargetCompany = itemData.production_companies.some(pc => isTargetCompany(pc));
-                    
+
                     if (hasTargetCompany) {
                         filteredHistory.push(item);
                     }
