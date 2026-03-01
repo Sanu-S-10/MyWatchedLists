@@ -237,7 +237,7 @@ const Dashboard = () => {
                     <div className="chart-container">
                         {stats.genreData.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={stats.genreData} layout="vertical" margin={{ left: 40, right: 20 }}>
+                                <BarChart data={stats.genreData} layout="vertical" margin={{ left: 40, right: 20 }} barCategoryGap="20%">
                                     <XAxis type="number" dataKey="hoursFloat" hide />
                                     <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} />
                                     <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} formatter={(value, name, props) => [formatTimeStr(props.payload.time), 'Time']} />
