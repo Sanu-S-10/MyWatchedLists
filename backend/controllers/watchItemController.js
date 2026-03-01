@@ -7,27 +7,25 @@ const isQuotaOrRateLimitError = (error) => {
 };
 
 const isLikelyProductionCompanyQuery = (prompt) => {
-    if (/production company|produced by|production from|studio|production studio|distributed by/i.test(prompt)) {
+    if (/(production company|produced by|production from|studio|production studio|distributed by)/i.test(prompt)) {
         return true;
     }
 
-    const suffixMatch = prompt.trim().toLowerCase().match(/^(.+?)\s+(movie|movies|film|films|series|tv|show|shows)$/i);
+    const lowerPrompt = prompt.toLowerCase().trim();
+    const suffixMatch = lowerPrompt.match(/^(.+?)\s+(movie|movies|film|films|series|tv|show|shows)$/i);
     if (!suffixMatch) {
         return false;
     }
 
     const candidate = suffixMatch[1].trim();
-    const excluded = new Set([
-        'action', 'drama', 'comedy', 'romance', 'horror', 'thriller', 'crime', 'mystery',
-        'adventure', 'fantasy', 'animation', 'anime', 'documentary', 'sci-fi', 'science fiction',
-        'family', 'history', 'war', 'music', 'musical', 'western', 'sport', 'sports', 'biography'
+    const knownStudios = new Set([
+        'a24', 'marvel', 'dc', 'pixar', 'disney', 'warner bros', 'wb', 'universal',
+        'paramount', 'sony', 'columbia', 'dreamworks', 'illumination', 'studio ghibli',
+        'ghibli', 'blumhouse', 'netflix', 'amazon', 'apple', 'hbo', 'fox', 'lionsgate',
+        'lucasfilm', 'neon', 'searchlight', 'focus features', 'miramax', 'mgm'
     ]);
 
-    if (!candidate || excluded.has(candidate)) {
-        return false;
-    }
-
-    return candidate.split(/\s+/).length <= 4;
+    return knownStudios.has(candidate);
 };
 
 const filterByHeuristics = (prompt, watchHistory) => {
@@ -229,11 +227,20 @@ const aiFilterItems = async (req, res) => {
 
         const heuristicFallback = filterByHeuristics(prompt, watchHistory);
 
+        // Check if user is asking about an actor/director via determinisitic TMDB Person Search
+        const isPersonQuery = await filterByPerson(prompt, watchHistory, res);
+        if (isPersonQuery) {
+            return; // We already returned the matched results
+        }
+
         // Otherwise use Gemini for general filtering
         const validItems = watchHistory.map(item => ({
             _id: item._id.toString(),
             title: item.title,
-            mediaType: item.mediaType
+            mediaType: item.mediaType,
+            releaseYear: item.releaseDate ? new Date(item.releaseDate).getFullYear() : undefined,
+            origin: item.originCountry || '',
+            genres: Array.isArray(item.genres) ? item.genres.map(g => g.name).join(', ') : ''
         }));
 
         // Initialize Gemini
@@ -246,38 +253,48 @@ const aiFilterItems = async (req, res) => {
 
         const modelsToTry = [
             "gemini-2.5-flash",
-            "gemini-3-flash",
+            "gemini-2.0-flash",
             "gemini-2.5-flash-lite",
-            "gemma-3-27b"
+            "gemini-3-flash-preview",
+            "gemma-3-27b-it"
         ];
 
-        const systemInstruction = `You are a movie and TV series expert. The user wants to filter their personal watched list based on the prompt: "${prompt}". 
+        const systemInstruction = `You are an expert film database. The user wants to filter their watched list using the prompt: "${prompt}". 
 Here is their watched list in JSON format: ${JSON.stringify(validItems)}.
-Your task is to return ONLY a JSON array of "_id" strings from the provided list that match the user's prompt (e.g., if they asked for 'action movies', return the _ids of action movies). 
-Do NOT output any markdown blocks, explanations, or other text. ONLY the raw JSON array of strings. If none match, return [].`;
 
-        let result;
+CRITICAL INSTRUCTIONS:
+1. Return ONLY a valid JSON array of "_id" strings for items that EXACTLY match the prompt.
+2. BE EXTREMELY CONSERVATIVE. Do NOT guess. If you do not know for an absolute certainty that an item matches, DO NOT include it.
+3. If the user asks for a specific actor, actress, or director, you MUST verify they are actually credited in that specific movie/series. If you are not 100% positive, omit it.
+4. It is much better to return [] than to include incorrect items.
+5. Example: If they ask for "David Dastmalchian", DO NOT return John Wick.
+
+Output strictly JSON. No markdown, no text. Example output: ["1", "5"] or []`;
+
+        let textResult;
         for (const modelName of modelsToTry) {
             try {
-                const model = genAI.getGenerativeModel({ model: modelName });
-                result = await model.generateContent(systemInstruction);
+                const model = genAI.getGenerativeModel({
+                    model: modelName,
+                    generationConfig: { responseMimeType: "application/json" }
+                });
+                const result = await model.generateContent(systemInstruction);
+                textResult = result.response.text().trim();
+                if (!textResult) {
+                    throw new Error("Empty response from AI");
+                }
                 break; // Break on success
             } catch (error) {
-                if (isQuotaOrRateLimitError(error)) {
-                    console.warn(`Model ${modelName} quota/rate limit reached, trying next model...`);
-                    continue;
-                }
-                throw error;
+                console.warn(`Model ${modelName} failed or quota reached: ${error.message}`);
+                continue; // Try the next model
             }
         }
 
-        if (!result) {
-            console.warn('All available AI models exhausted or quota reached, using heuristic fallback.');
+        if (!textResult) {
+            console.warn('All available AI models exhausted, failed, or quota reached. Using heuristic fallback.');
             res.set('X-AI-Filter-Mode', 'basic');
             return res.json(heuristicFallback);
         }
-
-        let textResult = result.response.text().trim();
 
         // Clean up markdown optionally returned by Gemini
         if (textResult.startsWith('\`\`\`json')) {
@@ -434,6 +451,51 @@ const filterByProductionCompany = async (prompt, watchHistory, res) => {
     } catch (error) {
         console.error('Production Company Filter Error:', error);
         res.status(500).json({ message: 'Failed to filter by production company' });
+    }
+};
+
+// Helper function to securely filter exact actors/directors from TMDB directly without hallucination
+const filterByPerson = async (prompt, watchHistory, res) => {
+    try {
+        const TMDB_API_KEY = process.env.VITE_TMDB_API_KEY || process.env.TMDB_API_KEY;
+        if (!TMDB_API_KEY) return false;
+
+        const cleanPrompt = prompt.replace(/\s+(movie|movies|film|films|series|tv|show|shows|content|actor|actress|director)$/i, '').trim();
+
+        // Only try person lookup if it's likely a name (1-4 words)
+        if (!cleanPrompt || cleanPrompt.split(/\s+/).length > 4) return false;
+
+        const searchUrl = `https://api.themoviedb.org/3/search/person?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(cleanPrompt)}`;
+        const searchResponse = await fetch(searchUrl);
+        const searchData = await searchResponse.json();
+
+        // Ensure the person is somewhat popular so we don't accidentally match generic words to obscure extras
+        if (searchData.results && searchData.results.length > 0 && searchData.results[0].popularity > 1.0) {
+            const personId = searchData.results[0].id;
+
+            const creditsUrl = `https://api.themoviedb.org/3/person/${personId}/combined_credits?api_key=${TMDB_API_KEY}`;
+            const creditsResponse = await fetch(creditsUrl);
+            const creditsData = await creditsResponse.json();
+
+            const personTmdbIds = new Set([
+                ...(creditsData.cast || []).map(c => c.id),
+                ...(creditsData.crew || []).map(c => c.id)
+            ]);
+
+            const filteredHistory = watchHistory.filter(item => personTmdbIds.has(item.tmdbId));
+
+            // If we actually have movies involving this person, return them! 
+            if (filteredHistory.length > 0) {
+                filteredHistory.sort((a, b) => new Date(b.watchDate) - new Date(a.watchDate));
+                res.set('X-AI-Filter-Mode', 'tmdb-person');
+                res.json(filteredHistory);
+                return true;
+            }
+        }
+        return false;
+    } catch (e) {
+        console.error('Person Filter Error:', e.message);
+        return false;
     }
 };
 
