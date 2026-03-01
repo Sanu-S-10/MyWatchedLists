@@ -103,7 +103,7 @@ const Settings = () => {
         if (e && e.preventDefault) {
             e.preventDefault();
         }
-        
+
         if (!editUsername.trim()) {
             return addToast('Username cannot be empty', 'error');
         }
@@ -148,7 +148,7 @@ const Settings = () => {
 
             const result = await clearHistory(mediaTypesToClear);
             if (result.success) {
-                const message = mediaTypesToClear.length === 2 
+                const message = mediaTypesToClear.length === 2
                     ? 'All watch history cleared'
                     : `${mediaTypesToClear.join(' & ')} cleared`;
                 addToast(message, 'success');
@@ -372,34 +372,34 @@ The Matrix,movie,5,1999,Mind-bending classic,`;
         const genres = fullDetails?.genres || [];
         const genreIds = genres.map(g => g.id);
         const genreNames = genres.map(g => g.name.toLowerCase());
-        
+
         // TMDB Genre IDs: 16 = Animation, 99 = Documentary
         const isAnimation = genreIds.includes(16) || genreNames.includes('animation');
         const isDocumentary = genreIds.includes(99) || genreNames.includes('documentary');
-        
+
         // Check for anime keywords and characteristics
         const title = (fullDetails?.title || fullDetails?.name || '').toLowerCase();
         const originCountries = fullDetails?.origin_country || [];
         const productionCountries = fullDetails?.production_countries?.map(c => c.iso_3166_1) || [];
         const allCountries = [...originCountries, ...productionCountries];
-        
+
         // Documentary has priority as it's a specific genre
         if (isDocumentary) {
             return 'documentary';
         }
-        
+
         // Japanese origin typically indicates potential anime
         const isJapanese = allCountries.includes('JP');
         const hasAnimeKeywords = /anime|otaku|manga|hentai|shounen|seinen|shoujo/i.test(title);
-        
+
         if (isAnimation && (isJapanese || hasAnimeKeywords)) {
             return 'anime';
         }
-        
+
         if (isAnimation) {
             return 'animation';
         }
-        
+
         return 'live_action';
     };
 
@@ -438,6 +438,11 @@ The Matrix,movie,5,1999,Mind-bending classic,`;
             };
 
             for (let i = 0; i < rows.length; i++) {
+                // Add a small delay between processing rows to prevent hitting rate limits
+                if (i > 0) {
+                    await new Promise(resolve => setTimeout(resolve, 250));
+                }
+
                 const row = rows[i];
                 const validationError = validateRow(row);
 
@@ -459,7 +464,7 @@ The Matrix,movie,5,1999,Mind-bending classic,`;
                     }
 
                     const fullDetails = await fetchFullDetails(searchResult.id, row.type);
-                    
+
                     // Detect content type (anime, animation, or live_action)
                     const subType = detectContentType(fullDetails || {}, row);
 
@@ -496,7 +501,7 @@ The Matrix,movie,5,1999,Mind-bending classic,`;
                     } else {
                         // Fetch all aired episodes for series
                         const airedData = await fetchAiredEpisodesForSeries(searchResult.id, fullDetails);
-                        
+
                         payload.episodes = airedData.episodeCount;
                         payload.seasons = fullDetails?.number_of_seasons || 1;
                         payload.episodeDuration = fullDetails?.episode_run_time?.[0] || 45;
@@ -524,7 +529,7 @@ The Matrix,movie,5,1999,Mind-bending classic,`;
             }
 
             setImportResults(results);
-            const statsMsg = results.success > 0 
+            const statsMsg = results.success > 0
                 ? ` | Anime: ${results.stats.anime}, Animation: ${results.stats.animation}, Documentary: ${results.stats.documentary}, Live Action: ${results.stats.live_action}`
                 : '';
             addToast(
@@ -547,271 +552,271 @@ The Matrix,movie,5,1999,Mind-bending classic,`;
                 </div>
 
                 <div className="settings-grid">
-                <div className="settings-card">
-                    <div className="settings-card-header">
-                        <User className="settings-icon" size={24} />
-                        <h2>Profile</h2>
-                    </div>
-                    <p className="settings-desc">View and manage your account information.</p>
-
-                    <div className="profile-info">
-                        <div className="profile-field-container">
-                            <div className="profile-field">
-                                <label>Username</label>
-                                {isEditingProfile ? (
-                                    <div className="profile-edit-row">
-                                        <Input
-                                            type="text"
-                                            placeholder="Enter username"
-                                            value={editUsername}
-                                            onChange={(e) => setEditUsername(e.target.value)}
-                                            required
-                                        />
-                                        <button className="profile-icon-btn save-btn" title="Save" onClick={handleSaveProfile} disabled={isSavingProfile}>
-                                            <Check size={20} />
-                                        </button>
-                                        <button className="profile-icon-btn cancel-btn" title="Cancel" onClick={handleCancelEdit} disabled={isSavingProfile}>
-                                            <X size={20} />
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div className="profile-value-row">
-                                        <p className="profile-value">{user?.username || 'Not available'}</p>
-                                        <button className="profile-icon-btn" title="Edit" onClick={handleEditProfile}>
-                                            <Edit2 size={18} />
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
+                    <div className="settings-card">
+                        <div className="settings-card-header">
+                            <User className="settings-icon" size={24} />
+                            <h2>Profile</h2>
                         </div>
+                        <p className="settings-desc">View and manage your account information.</p>
 
-                        <div className="profile-field-container">
-                            <div className="profile-field">
-                                <label>Email</label>
-                                {isEditingProfile ? (
-                                    <div className="profile-edit-row">
-                                        <Input
-                                            type="email"
-                                            placeholder="Enter email"
-                                            value={editEmail}
-                                            onChange={(e) => setEditEmail(e.target.value)}
-                                            required
-                                        />
-                                        <button className="profile-icon-btn save-btn" title="Save" onClick={handleSaveProfile} disabled={isSavingProfile}>
-                                            <Check size={20} />
-                                        </button>
-                                        <button className="profile-icon-btn cancel-btn" title="Cancel" onClick={handleCancelEdit} disabled={isSavingProfile}>
-                                            <X size={20} />
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div className="profile-value-row">
-                                        <p className="profile-value">{user?.email || 'Not available'}</p>
-                                        <button className="profile-icon-btn" title="Edit" onClick={handleEditProfile}>
-                                            <Edit2 size={18} />
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="settings-card">
-                    <div className="settings-card-header">
-                        <Palette className="settings-icon" size={24} />
-                        <h2>Appearance</h2>
-                    </div>
-                    <p className="settings-desc">Choose your preferred theme across the application. Changes are applied instantly.</p>
-
-                    <div className="theme-selector">
-                        {themes.map((t) => (
-                            <button
-                                key={t.id}
-                                className={`theme-btn ${theme === t.id ? 'active' : ''}`}
-                                onClick={() => handleThemeChange(t.id)}
-                                style={{ '--btn-bg': t.color, '--btn-accent': t.accent }}
-                            >
-                                <div className="theme-preview">
-                                    <div className="theme-color bg"></div>
-                                    <div className="theme-color accent"></div>
-                                </div>
-                                <span>{t.name}</span>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="settings-card">
-                    <div className="settings-card-header">
-                        <Shield className="settings-icon" size={24} />
-                        <h2>Security</h2>
-                    </div>
-                    <p className="settings-desc">Update your password to keep your account secure.</p>
-
-                    <form onSubmit={handlePasswordUpdate} className="security-form">
-                        <Input
-                            label="New Password"
-                            type="password"
-                            placeholder="Enter new password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                        />
-                        <Input
-                            label="Confirm Password"
-                            type="password"
-                            placeholder="Confirm new password"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            required
-                        />
-                        <Button type="submit" isLoading={isUpdatingAuth}>Update Password</Button>
-                    </form>
-                </div>
-
-                <div className="settings-card">
-                    <div className="settings-card-header">
-                        <Upload className="settings-icon" size={24} />
-                        <h2>Bulk Import</h2>
-                    </div>
-                    <p className="settings-desc">Import multiple movies and series from a CSV file at once.</p>
-
-                    <div className="bulk-import-section">
-                        <div className="import-actions">
-                            <Button variant="secondary" onClick={downloadTemplate}>
-                                <Download size={16} /> Download Template
-                            </Button>
-                        </div>
-
-                        <div className="upload-box">
-                            <input
-                                type="file"
-                                accept=".csv"
-                                onChange={(e) => setImportFile(e.target.files?.[0] || null)}
-                                disabled={isImporting}
-                                className="file-input"
-                                id="csv-input-settings"
-                            />
-                            <label htmlFor="csv-input-settings" className="file-label">
-                                Choose CSV File
-                            </label>
-                            {importFile && <p className="file-name">{importFile.name}</p>}
-                        </div>
-
-                        <Button variant="primary" onClick={handleBulkImport} isLoading={isImporting} fullWidth>
-                            Import Data
-                        </Button>
-
-                        {importProgress.total > 0 && (
-                            <div className="progress-section">
-                                <p>Processing: {importProgress.current} / {importProgress.total}</p>
-                                <div className="progress-bar">
-                                    <div className="progress-fill" style={{
-                                        width: `${(importProgress.current / importProgress.total) * 100}%`
-                                    }}></div>
-                                </div>
-                            </div>
-                        )}
-
-                        {importResults && (
-                            <div className="results-section">
-                                <h4>Import Results</h4>
-                                <div className="results-summary">
-                                    <div className="result-item success">
-                                        <span className="result-label">Successfully Added</span>
-                                        <span className="result-count">{importResults.success}</span>
-                                    </div>
-                                    {importResults.failed > 0 && (
-                                        <div className="result-item failed">
-                                            <span className="result-label">Failed</span>
-                                            <span className="result-count">{importResults.failed}</span>
+                        <div className="profile-info">
+                            <div className="profile-field-container">
+                                <div className="profile-field">
+                                    <label>Username</label>
+                                    {isEditingProfile ? (
+                                        <div className="profile-edit-row">
+                                            <Input
+                                                type="text"
+                                                placeholder="Enter username"
+                                                value={editUsername}
+                                                onChange={(e) => setEditUsername(e.target.value)}
+                                                required
+                                            />
+                                            <button className="profile-icon-btn save-btn" title="Save" onClick={handleSaveProfile} disabled={isSavingProfile}>
+                                                <Check size={20} />
+                                            </button>
+                                            <button className="profile-icon-btn cancel-btn" title="Cancel" onClick={handleCancelEdit} disabled={isSavingProfile}>
+                                                <X size={20} />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="profile-value-row">
+                                            <p className="profile-value">{user?.username || 'Not available'}</p>
+                                            <button className="profile-icon-btn" title="Edit" onClick={handleEditProfile}>
+                                                <Edit2 size={18} />
+                                            </button>
                                         </div>
                                     )}
                                 </div>
-
-                                {importResults.success > 0 && importResults.stats && (
-                                    <div className="content-type-stats">
-                                        <h5>Content Type Breakdown:</h5>
-                                        <div className="stats-breakdown">
-                                            {importResults.stats.anime > 0 && (
-                                                <div className="stat-item anime">
-                                                    <span className="stat-label">🎌 Anime</span>
-                                                    <span className="stat-value">{importResults.stats.anime}</span>
-                                                </div>
-                                            )}
-                                            {importResults.stats.animation > 0 && (
-                                                <div className="stat-item animation">
-                                                    <span className="stat-label">🎬 Animation</span>
-                                                    <span className="stat-value">{importResults.stats.animation}</span>
-                                                </div>
-                                            )}
-                                            {importResults.stats.documentary > 0 && (
-                                                <div className="stat-item documentary">
-                                                    <span className="stat-label">📽️ Documentary</span>
-                                                    <span className="stat-value">{importResults.stats.documentary}</span>
-                                                </div>
-                                            )}
-                                            {importResults.stats.live_action > 0 && (
-                                                <div className="stat-item live-action">
-                                                    <span className="stat-label">🎥 Live Action</span>
-                                                    <span className="stat-value">{importResults.stats.live_action}</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {importResults.errors.length > 0 && (
-                                    <div className="errors-list">
-                                        <h5>Errors:</h5>
-                                        <ul>
-                                            {importResults.errors.map((error, idx) => (
-                                                <li key={idx}>{error}</li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                )}
                             </div>
-                        )}
-                    </div>
-                </div>
 
-                <div className="settings-card">
-                    <div className="settings-card-header">
-                        <Download className="settings-icon" size={24} />
-                        <h2>Data Management</h2>
-                    </div>
-                    <p className="settings-desc">Download a copy of your watched history as a JSON file.</p>
-
-                    <div className="data-actions">
-                        <Button variant="secondary" onClick={handleExportData}>
-                            Export Watch History
-                        </Button>
-                        <Button
-                            variant="secondary"
-                            onClick={() => setIsClearModalOpen(true)}
-                            disabled={isClearingHistory || history.length === 0}
-                        >
-                            Clear Watch History
-                        </Button>
-                        <div className="data-warning">
-                            <p>This permanently removes all movies and series from your account.</p>
+                            <div className="profile-field-container">
+                                <div className="profile-field">
+                                    <label>Email</label>
+                                    {isEditingProfile ? (
+                                        <div className="profile-edit-row">
+                                            <Input
+                                                type="email"
+                                                placeholder="Enter email"
+                                                value={editEmail}
+                                                onChange={(e) => setEditEmail(e.target.value)}
+                                                required
+                                            />
+                                            <button className="profile-icon-btn save-btn" title="Save" onClick={handleSaveProfile} disabled={isSavingProfile}>
+                                                <Check size={20} />
+                                            </button>
+                                            <button className="profile-icon-btn cancel-btn" title="Cancel" onClick={handleCancelEdit} disabled={isSavingProfile}>
+                                                <X size={20} />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="profile-value-row">
+                                            <p className="profile-value">{user?.email || 'Not available'}</p>
+                                            <button className="profile-icon-btn" title="Edit" onClick={handleEditProfile}>
+                                                <Edit2 size={18} />
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div className="settings-card mobile-logout-card">
-                    <div className="settings-card-header">
-                        <LogOut className="settings-icon" size={24} />
-                        <h2>Account</h2>
+                    <div className="settings-card">
+                        <div className="settings-card-header">
+                            <Palette className="settings-icon" size={24} />
+                            <h2>Appearance</h2>
+                        </div>
+                        <p className="settings-desc">Choose your preferred theme across the application. Changes are applied instantly.</p>
+
+                        <div className="theme-selector">
+                            {themes.map((t) => (
+                                <button
+                                    key={t.id}
+                                    className={`theme-btn ${theme === t.id ? 'active' : ''}`}
+                                    onClick={() => handleThemeChange(t.id)}
+                                    style={{ '--btn-bg': t.color, '--btn-accent': t.accent }}
+                                >
+                                    <div className="theme-preview">
+                                        <div className="theme-color bg"></div>
+                                        <div className="theme-color accent"></div>
+                                    </div>
+                                    <span>{t.name}</span>
+                                </button>
+                            ))}
+                        </div>
                     </div>
-                    <p className="settings-desc">Sign out from your account on this device.</p>
 
-                    <Button variant="danger" onClick={handleLogout} fullWidth>
-                        <LogOut size={16} /> Logout
-                    </Button>
-                </div>
+                    <div className="settings-card">
+                        <div className="settings-card-header">
+                            <Shield className="settings-icon" size={24} />
+                            <h2>Security</h2>
+                        </div>
+                        <p className="settings-desc">Update your password to keep your account secure.</p>
+
+                        <form onSubmit={handlePasswordUpdate} className="security-form">
+                            <Input
+                                label="New Password"
+                                type="password"
+                                placeholder="Enter new password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                            />
+                            <Input
+                                label="Confirm Password"
+                                type="password"
+                                placeholder="Confirm new password"
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                required
+                            />
+                            <Button type="submit" isLoading={isUpdatingAuth}>Update Password</Button>
+                        </form>
+                    </div>
+
+                    <div className="settings-card">
+                        <div className="settings-card-header">
+                            <Upload className="settings-icon" size={24} />
+                            <h2>Bulk Import</h2>
+                        </div>
+                        <p className="settings-desc">Import multiple movies and series from a CSV file at once.</p>
+
+                        <div className="bulk-import-section">
+                            <div className="import-actions">
+                                <Button variant="secondary" onClick={downloadTemplate}>
+                                    <Download size={16} /> Download Template
+                                </Button>
+                            </div>
+
+                            <div className="upload-box">
+                                <input
+                                    type="file"
+                                    accept=".csv"
+                                    onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                                    disabled={isImporting}
+                                    className="file-input"
+                                    id="csv-input-settings"
+                                />
+                                <label htmlFor="csv-input-settings" className="file-label">
+                                    Choose CSV File
+                                </label>
+                                {importFile && <p className="file-name">{importFile.name}</p>}
+                            </div>
+
+                            <Button variant="primary" onClick={handleBulkImport} isLoading={isImporting} fullWidth>
+                                Import Data
+                            </Button>
+
+                            {importProgress.total > 0 && (
+                                <div className="progress-section">
+                                    <p>Processing: {importProgress.current} / {importProgress.total}</p>
+                                    <div className="progress-bar">
+                                        <div className="progress-fill" style={{
+                                            width: `${(importProgress.current / importProgress.total) * 100}%`
+                                        }}></div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {importResults && (
+                                <div className="results-section">
+                                    <h4>Import Results</h4>
+                                    <div className="results-summary">
+                                        <div className="result-item success">
+                                            <span className="result-label">Successfully Added</span>
+                                            <span className="result-count">{importResults.success}</span>
+                                        </div>
+                                        {importResults.failed > 0 && (
+                                            <div className="result-item failed">
+                                                <span className="result-label">Failed</span>
+                                                <span className="result-count">{importResults.failed}</span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {importResults.success > 0 && importResults.stats && (
+                                        <div className="content-type-stats">
+                                            <h5>Content Type Breakdown:</h5>
+                                            <div className="stats-breakdown">
+                                                {importResults.stats.anime > 0 && (
+                                                    <div className="stat-item anime">
+                                                        <span className="stat-label">🎌 Anime</span>
+                                                        <span className="stat-value">{importResults.stats.anime}</span>
+                                                    </div>
+                                                )}
+                                                {importResults.stats.animation > 0 && (
+                                                    <div className="stat-item animation">
+                                                        <span className="stat-label">🎬 Animation</span>
+                                                        <span className="stat-value">{importResults.stats.animation}</span>
+                                                    </div>
+                                                )}
+                                                {importResults.stats.documentary > 0 && (
+                                                    <div className="stat-item documentary">
+                                                        <span className="stat-label">📽️ Documentary</span>
+                                                        <span className="stat-value">{importResults.stats.documentary}</span>
+                                                    </div>
+                                                )}
+                                                {importResults.stats.live_action > 0 && (
+                                                    <div className="stat-item live-action">
+                                                        <span className="stat-label">🎥 Live Action</span>
+                                                        <span className="stat-value">{importResults.stats.live_action}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {importResults.errors.length > 0 && (
+                                        <div className="errors-list">
+                                            <h5>Errors:</h5>
+                                            <ul>
+                                                {importResults.errors.map((error, idx) => (
+                                                    <li key={idx}>{error}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="settings-card">
+                        <div className="settings-card-header">
+                            <Download className="settings-icon" size={24} />
+                            <h2>Data Management</h2>
+                        </div>
+                        <p className="settings-desc">Download a copy of your watched history as a JSON file.</p>
+
+                        <div className="data-actions">
+                            <Button variant="secondary" onClick={handleExportData}>
+                                Export Watch History
+                            </Button>
+                            <Button
+                                variant="secondary"
+                                onClick={() => setIsClearModalOpen(true)}
+                                disabled={isClearingHistory || history.length === 0}
+                            >
+                                Clear Watch History
+                            </Button>
+                            <div className="data-warning">
+                                <p>This permanently removes all movies and series from your account.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="settings-card mobile-logout-card">
+                        <div className="settings-card-header">
+                            <LogOut className="settings-icon" size={24} />
+                            <h2>Account</h2>
+                        </div>
+                        <p className="settings-desc">Sign out from your account on this device.</p>
+
+                        <Button variant="danger" onClick={handleLogout} fullWidth>
+                            <LogOut size={16} /> Logout
+                        </Button>
+                    </div>
 
                 </div>
             </div>

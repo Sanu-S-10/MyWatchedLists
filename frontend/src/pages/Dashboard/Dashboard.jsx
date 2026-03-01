@@ -241,7 +241,7 @@ const Dashboard = () => {
                                     <XAxis type="number" dataKey="hoursFloat" hide />
                                     <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} />
                                     <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} formatter={(value, name, props) => [formatTimeStr(props.payload.time), 'Time']} />
-                                    <Bar dataKey="hoursFloat" fill="var(--accent-color)" radius={[0, 4, 4, 0]} />
+                                    <Bar dataKey="hoursFloat" fill="var(--accent-color)" radius={[0, 4, 4, 0]} maxBarSize={40} />
                                 </BarChart>
                             </ResponsiveContainer>
                         ) : (

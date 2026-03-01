@@ -415,7 +415,9 @@ const AddModal = ({ item, onClose }) => {
                                                                         />
                                                                         <span style={{ color: 'var(--text-secondary)', minWidth: '35px' }}>Ep {ep.episode_number}</span>
                                                                         <span style={{ color: isAired && selectedEpisodes.has(`S${season.season_number}E${ep.episode_number}`) ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
-                                                                            {ep.name} {!isAired && <span style={{ fontSize: '0.75rem', marginLeft: '8px', color: 'var(--warning-color)' }}>(Unreleased)</span>}
+                                                                            {ep.name}
+                                                                            {ep.runtime ? <span style={{ fontSize: '0.75rem', marginLeft: '6px', color: 'var(--text-secondary)' }}>({ep.runtime}m)</span> : ''}
+                                                                            {!isAired && <span style={{ fontSize: '0.75rem', marginLeft: '8px', color: 'var(--warning-color)' }}>(Unreleased)</span>}
                                                                         </span>
                                                                     </label>
                                                                 );

@@ -22,7 +22,7 @@ const DetailsModal = ({ item, onClose, onEdit }) => {
                 if (API_KEY) {
                     const { data } = await axios.get(`https://api.themoviedb.org/3/${type}/${item.tmdbId}?api_key=${API_KEY}&append_to_response=credits`);
                     setDetails(data);
-                    
+
                     // Extract director and cast
                     if (data.credits) {
                         const directorObj = data.credits.crew?.find(person => person.job === 'Director');
@@ -120,9 +120,14 @@ const DetailsModal = ({ item, onClose, onEdit }) => {
 
                                 <div className="stats-preview" style={{ marginTop: '16px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                                     {item.watchTimeMinutes > 0 && (
-                                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
                                             <Clock size={14} />
-                                            {item.mediaType === 'movie' ? `${item.watchTimeMinutes} min` : `${item.episodes} eps × ${item.episodeDuration}m`}
+                                            {item.mediaType === 'movie'
+                                                ? `${item.watchTimeMinutes} min`
+                                                : `${item.episodes} eps (${item.watchTimeMinutes >= 60
+                                                    ? `${Math.floor(item.watchTimeMinutes / 60)}h ${item.watchTimeMinutes % 60}m`
+                                                    : `${item.watchTimeMinutes}m`
+                                                })`}
                                         </span>
                                     )}
                                 </div>
