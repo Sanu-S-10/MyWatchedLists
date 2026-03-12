@@ -29,16 +29,104 @@ const SearchBar = ({ onResultClick, placeholder = 'Search movies or series...' }
 
             setIsLoading(true);
             try {
-                // We will call TMDB API directly for search, or through our backend if we made a route.
-                // Assuming we have TMDB_API_KEY in frontend env vars, or just simulate it for layout purposes here.
-                // For real implementation, we'll hit TMDB API:
-                const API_KEY = import.meta.env.VITE_TMDB_API_KEY; // We'll need to set this
+                const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
                 if (API_KEY) {
-                    const { data } = await axios.get(`https://api.themoviedb.org/3/search/multi?api_key=${API_KEY}&query=${query}`);
-                    const filtered = data.results.filter(
-                        (item) => item.media_type === 'movie' || item.media_type === 'tv'
-                    );
-                    setResults(filtered.slice(0, 5));
+                    // Parse year from query if format is "Title (Year)"
+                    const yearMatch = query.match(/\((\d{4})\)$/);
+                    let searchQuery = query;
+                    let filterYear = null;
+                    
+                    if (yearMatch) {
+                        filterYear = yearMatch[1];
+                        searchQuery = query.replace(/\s*\(\d{4}\)\s*$/, '').trim();
+                    }
+                    
+                    const encodedQuery = encodeURIComponent(searchQuery);
+                    const movieYearParam = filterYear ? `&year=${filterYear}` : '';
+                    const tvYearParam = filterYear ? `&first_air_date_year=${filterYear}` : '';
+                    
+                    // Search both movies and TV shows (all languages)
+                    const [movieRes, tvRes] = await Promise.all([
+                        axios.get(`https://api.themoviedb.org/3/search/movie?api_key=${API_KEY}&query=${encodedQuery}${movieYearParam}`),
+                        axios.get(`https://api.themoviedb.org/3/search/tv?api_key=${API_KEY}&query=${encodedQuery}${tvYearParam}`)
+                    ]);
+
+                    // Combine results with proper media_type
+                    let combinedResults = [
+                        ...movieRes.data.results.map(item => ({ ...item, media_type: 'movie' })),
+                        ...tvRes.data.results.map(item => ({ ...item, media_type: 'tv' }))
+                    ];
+
+                    // Filter by year if provided
+                    if (filterYear) {
+                        combinedResults = combinedResults.filter(item => {
+                            const itemYear = item.media_type === 'movie' 
+                                ? item.release_date?.substring(0, 4)
+                                : item.first_air_date?.substring(0, 4);
+                            return itemYear === filterYear;
+                        });
+                    }
+
+                    // Do tolerant matching/ranking instead of strict startsWith filtering.
+                    // This keeps results like "X2" visible for queries like "xmen 2".
+                    const normalize = (value = '') =>
+                        value
+                            .toLowerCase()
+                            .replace(/[^a-z0-9]/g, '');
+
+                    const normalizedQuery = normalize(searchQuery);
+                    const queryTokens = searchQuery
+                        .toLowerCase()
+                        .split(/\s+/)
+                        .map(token => token.replace(/[^a-z0-9]/g, ''))
+                        .filter(Boolean);
+
+                    const getScore = (item) => {
+                        const titles = [item.title, item.name, item.original_title, item.original_name]
+                            .filter(Boolean)
+                            .map(value => value.toLowerCase());
+
+                        const normalizedTitles = titles.map(normalize);
+
+                        // Highest priority: exact normalized match.
+                        if (normalizedTitles.some(title => title === normalizedQuery)) {
+                            return 400;
+                        }
+
+                        // Prefix match on normalized title.
+                        if (normalizedTitles.some(title => title.startsWith(normalizedQuery))) {
+                            return 300;
+                        }
+
+                        // Substring match on normalized title.
+                        if (normalizedTitles.some(title => title.includes(normalizedQuery))) {
+                            return 220;
+                        }
+
+                        // Token overlap gives softer matching for human query variations.
+                        const tokenOverlap = queryTokens.reduce((count, token) => {
+                            return normalizedTitles.some(title => title.includes(token)) ? count + 1 : count;
+                        }, 0);
+
+                        // Small fallback score for broad TMDB hits so we don't hide plausible results.
+                        return tokenOverlap > 0 ? 120 + tokenOverlap * 15 : 40;
+                    };
+
+                    const sorted = combinedResults.sort((a, b) => {
+                        const scoreA = getScore(a);
+                        const scoreB = getScore(b);
+
+                        if (scoreA !== scoreB) {
+                            return scoreB - scoreA;
+                        }
+
+                        return (b.popularity || 0) - (a.popularity || 0);
+                    });
+                    
+                    // Always limit to 8 results
+                    const filtered = sorted.slice(0, 8);
+                    
+                    setResults(filtered);
                 } else {
                     // Mock data for UI development if no key yet
                     setResults([
@@ -70,6 +158,21 @@ const SearchBar = ({ onResultClick, placeholder = 'Search movies or series...' }
         setShowDropdown(false);
         setQuery('');
         if (onResultClick) onResultClick(item);
+    };
+
+    const getMediaLabel = (item) => {
+        const isAnimation = item.genre_ids?.includes(16) || item.genres?.some(g => g.id === 16);
+        const isDocumentary = item.genre_ids?.includes(99) || item.genres?.some(g => g.id === 99);
+        const isJapanese = item.original_language === 'ja';
+
+        if (isDocumentary) {
+            return 'Documentary';
+        } else if (isAnimation && isJapanese) {
+            return 'Anime';
+        } else if (isAnimation) {
+            return 'Animated';
+        }
+        return item.media_type === 'movie' ? 'Movie' : 'Series';
     };
 
     return (
@@ -112,7 +215,7 @@ const SearchBar = ({ onResultClick, placeholder = 'Search movies or series...' }
                                     <div className="search-result-info">
                                         <h4>{item.title || item.name}</h4>
                                         <span>
-                                            {item.media_type === 'movie' ? 'Movie' : 'Series'} •{' '}
+                                            {getMediaLabel(item)} •{' '}
                                             {item.release_date?.substring(0, 4) || item.first_air_date?.substring(0, 4) || 'N/A'}
                                         </span>
                                     </div>

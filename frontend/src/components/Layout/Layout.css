@@ -12,6 +12,11 @@
     background-color: var(--bg-color);
     min-height: 100vh;
     overflow-y: auto;
+    transition: margin-left 250ms ease;
+}
+
+.sidebar-collapsed .main-content {
+    margin-left: 82px;
 }
 
 @media (max-width: 1024px) {
@@ -26,6 +31,10 @@
         margin-left: 0;
         padding: 16px;
         padding-bottom: 80px;
-        /* Space for bottom nav */
+        transition: none;
+    }
+    
+    .sidebar-collapsed .main-content {
+        margin-left: 0;
     }
 }

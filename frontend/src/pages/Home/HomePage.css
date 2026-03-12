@@ -108,7 +108,7 @@
 
 .nav-btn {
     padding: 10px 24px;
-    border-radius: 4px;
+    border-radius: 8px;
     font-weight: 500;
     text-decoration: none;
     letter-spacing: 0.5px;
@@ -211,7 +211,7 @@
 
 .btn {
     padding: 14px 32px;
-    border-radius: 6px;
+    border-radius: 16px;
     font-weight: 600;
     text-decoration: none;
     letter-spacing: 0.5px;
@@ -599,6 +599,38 @@
     gap: 24px;
     justify-content: center;
     flex-wrap: wrap;
+}
+
+.cta-actions .btn-primary {
+    background: linear-gradient(45deg, #e50914, #b20710) !important;
+    color: #fff !important;
+    border: none !important;
+    box-shadow: 0 10px 20px rgba(229, 9, 20, 0.3);
+    padding: 16px 40px !important;
+    font-size: 1rem !important;
+    border-radius: 16px !important;
+    min-width: 200px;
+}
+
+.cta-actions .btn-primary:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 15px 30px rgba(229, 9, 20, 0.4);
+}
+
+.cta-actions .btn-secondary {
+    background: #2d2d2d !important;
+    color: #fff !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    padding: 16px 40px !important;
+    font-size: 1rem !important;
+    border-radius: 16px !important;
+    min-width: 200px;
+}
+
+.cta-actions .btn-secondary:hover {
+    background: #3d3d3d !important;
+    border-color: #00f0ff !important;
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
 }
 
 /* Footer */

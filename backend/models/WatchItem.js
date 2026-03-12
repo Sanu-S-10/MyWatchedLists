@@ -58,6 +58,9 @@ const watchItemSchema = mongoose.Schema(
             type: Date,
             default: Date.now,
         },
+        lastWatchedDate: {
+            type: Date,
+        },
         watchTimeMinutes: {
             type: Number,
             default: 0,
@@ -72,6 +75,10 @@ const watchItemSchema = mongoose.Schema(
             type: [mongoose.Schema.Types.Mixed],
             default: []
         }, // Granular episode tracking (supports ["S1E1"] string format and legacy objects)
+        hasNewSeasonReleased: {
+            type: Boolean,
+            default: false,
+        }, // Track if a new season has been released that hasn't been watched
     },
     {
         timestamps: true,

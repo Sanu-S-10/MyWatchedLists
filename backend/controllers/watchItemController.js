@@ -148,6 +148,21 @@ const updateWatchItem = async (req, res) => {
             return res.status(401).json({ message: 'Not authorized' });
         }
 
+        // Check if new seasons/episodes were added
+        let newContentAdded = false;
+        if (watchedEpisodes !== undefined && watchItem.mediaType === 'series') {
+            const currentEpisodes = new Set(watchItem.watchedEpisodes || []);
+            const newEpisodes = watchedEpisodes || [];
+
+            // Check if any new episode was added
+            for (const ep of newEpisodes) {
+                if (!currentEpisodes.has(ep)) {
+                    newContentAdded = true;
+                    break;
+                }
+            }
+        }
+
         if (rating !== undefined) watchItem.rating = rating;
         if (userNotes !== undefined) watchItem.userNotes = userNotes;
         if (isFavorite !== undefined) watchItem.isFavorite = isFavorite;
@@ -157,6 +172,11 @@ const updateWatchItem = async (req, res) => {
         if (watchedSeasons !== undefined) watchItem.watchedSeasons = watchedSeasons;
         if (watchedEpisodes !== undefined) watchItem.watchedEpisodes = watchedEpisodes;
         if (watchTimeMinutes !== undefined) watchItem.watchTimeMinutes = watchTimeMinutes;
+
+        // Update lastWatchedDate only if new episodes/seasons were added
+        if (newContentAdded) {
+            watchItem.lastWatchedDate = new Date();
+        }
 
         const updatedItem = await watchItem.save();
         res.json(updatedItem);

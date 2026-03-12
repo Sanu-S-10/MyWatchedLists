@@ -11,6 +11,7 @@ const DetailsModal = ({ item, onClose, onEdit }) => {
     const [expandOverview, setExpandOverview] = useState(false);
     const [director, setDirector] = useState(null);
     const [cast, setCast] = useState([]);
+    const [fullSeasonsData, setFullSeasonsData] = useState([]);
 
     useEffect(() => {
         const fetchDetails = async () => {
@@ -28,6 +29,18 @@ const DetailsModal = ({ item, onClose, onEdit }) => {
                         const directorObj = data.credits.crew?.find(person => person.job === 'Director');
                         setDirector(directorObj || null);
                         setCast(data.credits.cast?.slice(0, 8) || []);
+                    }
+
+                    // Fetch full seasons data for TV series
+                    if (type === 'tv' && data.seasons) {
+                        const standardSeasons = data.seasons.filter(s => s.season_number > 0);
+                        const seasonPromises = standardSeasons.map(s =>
+                            axios.get(`https://api.themoviedb.org/3/tv/${item.tmdbId}/season/${s.season_number}?api_key=${API_KEY}`)
+                                .then(res => res.data)
+                                .catch(() => null)
+                        );
+                        const resolvedSeasons = (await Promise.all(seasonPromises)).filter(Boolean);
+                        setFullSeasonsData(resolvedSeasons);
                     }
                 } else {
                     setDetails({});
@@ -73,7 +86,13 @@ const DetailsModal = ({ item, onClose, onEdit }) => {
                             <div className="modal-info">
                                 <h2>{item.title}</h2>
                                 <span className="modal-meta">
-                                    {item.mediaType === 'movie' ? 'Movie' : 'Series'} •{' '}
+                                    {item.subType === 'documentary' 
+                                        ? 'Documentary' 
+                                        : item.subType === 'anime' 
+                                        ? (item.mediaType === 'movie' ? 'Anime Movie' : 'Anime Series')
+                                        : item.subType === 'animation'
+                                        ? (item.mediaType === 'movie' ? 'Animated Movie' : 'Animated Series')
+                                        : (item.mediaType === 'movie' ? 'Movie' : 'Series')} •{' '}
                                     {item.releaseDate ? item.releaseDate.substring(0, 4) : 'Unknown'}
                                 </span>
                                 {details?.overview && (
@@ -119,15 +138,26 @@ const DetailsModal = ({ item, onClose, onEdit }) => {
                                 )}
 
                                 <div className="stats-preview" style={{ marginTop: '16px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                                    {item.watchTimeMinutes > 0 && (
+                                    {details && (
                                         <span style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
                                             <Clock size={14} />
                                             {item.mediaType === 'movie'
-                                                ? `${item.watchTimeMinutes} min`
-                                                : `${item.episodes} eps (${item.watchTimeMinutes >= 60
+                                                ? (() => {
+                                                    const runtime = details.runtime || item.watchTimeMinutes || 0;
+                                                    return runtime >= 60
+                                                        ? `${Math.floor(runtime / 60)}h ${runtime % 60}m`
+                                                        : `${runtime}m`;
+                                                })()
+                                                : `${item.episodes} eps • ${details.episode_run_time?.[0] || item.episodeDuration || 0} min/ep`}
+                                        </span>
+                                    )}
+                                    {item.watchTimeMinutes > 0 && details && item.mediaType === 'series' && (
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                            {`${
+                                                item.watchTimeMinutes >= 60
                                                     ? `${Math.floor(item.watchTimeMinutes / 60)}h ${item.watchTimeMinutes % 60}m`
                                                     : `${item.watchTimeMinutes}m`
-                                                })`}
+                                            } total`}
                                         </span>
                                     )}
                                 </div>
@@ -198,6 +228,45 @@ const DetailsModal = ({ item, onClose, onEdit }) => {
                                                 );
                                             });
                                         })()}
+                                    </div>
+                                </div>
+                            )}
+
+                            {item.mediaType !== 'movie' && fullSeasonsData.length > 0 && (
+                                <div className="form-group" style={{ marginTop: '16px', backgroundColor: 'var(--bg-tertiary)', padding: '16px', borderRadius: '12px' }}>
+                                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px', display: 'block' }}>Season Status</span>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                        {fullSeasonsData.map(season => {
+                                            const today = new Date();
+                                            const airedEpisodes = season.episodes?.filter(ep => ep.air_date && new Date(ep.air_date) <= today) || [];
+                                            const unreleasedEpisodes = season.episodes?.filter(ep => !ep.air_date || new Date(ep.air_date) > today) || [];
+                                            const hasAiredEpisodes = airedEpisodes.length > 0;
+                                            const isFullyReleased = unreleasedEpisodes.length === 0;
+
+                                            let status = '';
+                                            let statusColor = '';
+
+                                            if (!hasAiredEpisodes) {
+                                                status = 'Upcoming Season';
+                                                statusColor = 'var(--warning-color)';
+                                            } else if (!isFullyReleased) {
+                                                status = 'Currently Airing';
+                                                statusColor = 'var(--warning-color)';
+                                            } else {
+                                                status = 'Released';
+                                                statusColor = 'var(--text-secondary)';
+                                            }
+
+                                            return (
+                                                <div key={season.season_number} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.85rem', padding: '8px 10px', backgroundColor: 'var(--bg-secondary)', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                                                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Season {season.season_number}</span>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{season.episodes?.length || 0} ep</span>
+                                                        <span style={{ fontSize: '0.75rem', color: statusColor, fontWeight: 500 }}>{status}</span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             )}

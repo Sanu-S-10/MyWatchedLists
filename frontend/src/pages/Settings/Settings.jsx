@@ -342,7 +342,7 @@ The Matrix,movie,5,1999,Mind-bending classic,`;
             // Collect aired episodes
             const airedEpisodes = [];
             let totalWatchTime = 0;
-            const episodeDuration = fullDetails.episode_run_time?.[0] || 45;
+            const seriesAvgRuntime = fullDetails.episode_run_time?.[0] || 0;
 
             resolvedSeasons.forEach(season => {
                 if (season.episodes) {
@@ -350,7 +350,9 @@ The Matrix,movie,5,1999,Mind-bending classic,`;
                         // Only include episodes that have aired
                         if (ep.air_date && new Date(ep.air_date) <= today) {
                             airedEpisodes.push(`S${ep.season_number}E${ep.episode_number}`);
-                            totalWatchTime += ep.runtime || episodeDuration;
+                            // Use actual episode runtime from TMDB, fallback to series average
+                            const episodeRuntime = ep.runtime > 0 ? ep.runtime : seriesAvgRuntime;
+                            totalWatchTime += episodeRuntime;
                         }
                     });
                 }
@@ -806,7 +808,7 @@ The Matrix,movie,5,1999,Mind-bending classic,`;
                         </div>
                     </div>
 
-                    <div className="settings-card mobile-logout-card">
+                    <div className="settings-card">
                         <div className="settings-card-header">
                             <LogOut className="settings-icon" size={24} />
                             <h2>Account</h2>

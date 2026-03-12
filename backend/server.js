@@ -9,6 +9,7 @@ import rateLimit from 'express-rate-limit';
 import connectDB from './config/db.js';
 import userRoutes from './routes/userRoutes.js';
 import watchItemRoutes from './routes/watchItemRoutes.js';
+import customListRoutes from './routes/customListRoutes.js';
 
 // Get current directory for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -78,6 +79,7 @@ app.get('/', (req, res) => {
 app.use('/api', apiLimiter);
 app.use('/api/users', authLimiter, userRoutes);
 app.use('/api/watch-history', watchItemRoutes);
+app.use('/api/custom-lists', customListRoutes);
 
 const PORT = process.env.PORT || 5000;
 

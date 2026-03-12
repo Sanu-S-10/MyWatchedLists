@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, Film, Heart, Settings, LogIn, Sparkles } from 'lucide-react';
+import { Home, Search, Film, Heart, Settings, LogIn, MoreHorizontal } from 'lucide-react';
 import { useContext } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import './BottomNav.css';
@@ -21,6 +21,9 @@ const BottomNav = () => {
         }
         if (path === '/dashboard') {
             return location.pathname === '/dashboard';
+        }
+        if (path === '/more') {
+            return ['/aifilter', '/trending', '/lists', '/more'].includes(location.pathname);
         }
         return location.pathname === path;
     };
@@ -52,10 +55,10 @@ const BottomNav = () => {
                         <span>Favs</span>
                     </Link>
                 </li>
-                <li className={isActive('/aifilter') ? 'active' : ''}>
-                    <Link to="/aifilter">
-                        <Sparkles size={24} />
-                        <span>AI</span>
+                <li className={isActive('/more') ? 'active' : ''}>
+                    <Link to="/more">
+                        <MoreHorizontal size={24} />
+                        <span>More</span>
                     </Link>
                 </li>
                 {user ? (

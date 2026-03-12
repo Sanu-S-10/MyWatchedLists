@@ -8,6 +8,7 @@ import { WatchHistoryContext } from '../../context/WatchHistoryContext';
 import { ToastContext } from '../../context/ToastContext';
 import StarRating from '../../components/UI/StarRating';
 import Button from '../../components/UI/Button';
+import EditModal from '../ContentList/EditModal';
 import './AddModal.css';
 
 // TMDB Genre ID mapping as fallback
@@ -43,6 +44,7 @@ const AddModal = ({ item, onClose }) => {
     const { addItem, removeItem, history } = useContext(WatchHistoryContext);
     const { addToast } = useContext(ToastContext);
     const [existingItem, setExistingItem] = useState(null);
+    const [showEditModal, setShowEditModal] = useState(false);
 
     useEffect(() => {
         // Check if item already exists in watch history
@@ -52,6 +54,25 @@ const AddModal = ({ item, onClose }) => {
                 historyItem.mediaType === (item.media_type === 'movie' ? 'movie' : 'series')
         );
         setExistingItem(foundItem || null);
+        
+        // Populate form fields with existing item data
+        if (foundItem) {
+            setRating(foundItem.rating || 0);
+            setUserNotes(foundItem.userNotes || '');
+            setIsFavorite(foundItem.isFavorite || false);
+            
+            if (foundItem.watchDate) {
+                setWatchDate(new Date(foundItem.watchDate).toISOString().split('T')[0]);
+                setIsUnknownDate(false);
+            } else {
+                setIsUnknownDate(true);
+            }
+            
+            // Populate watched episodes for series
+            if (foundItem.mediaType === 'series' && foundItem.watchedEpisodes) {
+                setSelectedEpisodes(new Set(foundItem.watchedEpisodes));
+            }
+        }
     }, [item, history]);
 
     useEffect(() => {
@@ -78,19 +99,24 @@ const AddModal = ({ item, onClose }) => {
                         const resolvedSeasons = (await Promise.all(seasonPromises)).filter(Boolean);
                         setFullSeasonsData(resolvedSeasons);
 
-                        // By default select all aired episodes
-                        const defaultSelected = new Set();
-                        const today = new Date();
-                        resolvedSeasons.forEach(season => {
-                            if (season.episodes) {
-                                season.episodes.forEach(ep => {
-                                    if (ep.air_date && new Date(ep.air_date) <= today) {
-                                        defaultSelected.add(`S${ep.season_number}E${ep.episode_number}`);
-                                    }
-                                });
-                            }
-                        });
-                        setSelectedEpisodes(defaultSelected);
+                        // For existing items, always keep the exact saved watched episodes.
+                        if (existingItem && existingItem.mediaType === 'series') {
+                            setSelectedEpisodes(new Set(existingItem.watchedEpisodes || []));
+                        } else {
+                            // For new items, preselect all aired episodes.
+                            const defaultSelected = new Set();
+                            const today = new Date();
+                            resolvedSeasons.forEach(season => {
+                                if (season.episodes) {
+                                    season.episodes.forEach(ep => {
+                                        if (ep.air_date && new Date(ep.air_date) <= today) {
+                                            defaultSelected.add(`S${ep.season_number}E${ep.episode_number}`);
+                                        }
+                                    });
+                                }
+                            });
+                            setSelectedEpisodes(defaultSelected);
+                        }
                     }
                 } else {
                     // Mock Data
@@ -119,7 +145,7 @@ const AddModal = ({ item, onClose }) => {
         if (item) {
             fetchDetails();
         }
-    }, [item]);
+    }, [item, existingItem]);
 
     const toggleExpandSeason = (seasonNumber) => {
         setExpandedSeason(prev => prev === seasonNumber ? null : seasonNumber);
@@ -158,21 +184,14 @@ const AddModal = ({ item, onClose }) => {
 
         setIsSubmitting(true);
 
-        // If item already exists, remove it
+        // If item already exists, don't allow re-adding
         if (existingItem) {
-            const result = await removeItem(existingItem._id);
+            addToast('This item is already in your watch list. Use Edit to modify it.', 'info');
             setIsSubmitting(false);
-
-            if (result.success) {
-                addToast('Removed from your watch list!', 'success');
-                onClose();
-            } else {
-                addToast(result.message, 'error');
-            }
             return;
         }
 
-        // Otherwise, proceed with adding the item
+        // Proceed with adding the item
 
         let runtimeParams = {};
 
@@ -184,6 +203,7 @@ const AddModal = ({ item, onClose }) => {
         } else {
             let calculatedEpisodes = 0;
             let totalWatchTime = 0;
+            const seriesAvgRuntime = details?.episode_run_time?.[0] || 0;
 
             selectedEpisodes.forEach(epStr => {
                 const [s, e] = epStr.replace('S', '').split('E').map(Number);
@@ -192,7 +212,9 @@ const AddModal = ({ item, onClose }) => {
                     const epData = seasonData.episodes.find(ep => ep.episode_number === e);
                     if (epData) {
                         calculatedEpisodes++;
-                        totalWatchTime += epData.runtime || details?.episode_run_time?.[0] || 45;
+                        // Use actual episode runtime from TMDB (prefer episode-specific), fallback to series average
+                        const episodeRuntime = epData.runtime > 0 ? epData.runtime : seriesAvgRuntime;
+                        totalWatchTime += episodeRuntime;
                     }
                 }
             });
@@ -202,7 +224,7 @@ const AddModal = ({ item, onClose }) => {
             runtimeParams = {
                 seasons: details?.number_of_seasons || 1,
                 episodes: calculatedEpisodes,
-                episodeDuration: details?.episode_run_time?.[0] || 45,
+                episodeDuration: seriesAvgRuntime,
                 watchTimeMinutes: totalWatchTime,
                 watchedSeasons: [],
                 watchedEpisodes: watchedEpisodesArray
@@ -266,6 +288,30 @@ const AddModal = ({ item, onClose }) => {
         }
     };
 
+    const handleRemoveItem = async () => {
+        if (!existingItem) return;
+        
+        setIsSubmitting(true);
+        const result = await removeItem(existingItem._id);
+        setIsSubmitting(false);
+
+        if (result.success) {
+            addToast('Removed from your watch list!', 'success');
+            onClose();
+        } else {
+            addToast(result.message, 'error');
+        }
+    };
+
+    const handleEditItem = () => {
+        setShowEditModal(true);
+    };
+
+    const handleCloseEditModal = () => {
+        setShowEditModal(false);
+        onClose(); // Close the AddModal after editing
+    };
+
     const modalContent = (
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -288,7 +334,20 @@ const AddModal = ({ item, onClose }) => {
                             <div className="modal-info">
                                 <h2>{item.title || item.name}</h2>
                                 <span className="modal-meta">
-                                    {item.media_type === 'movie' ? 'Movie' : 'Series'} •{' '}
+                                    {(() => {
+                                        const isAnimation = details?.genres?.some(g => g.id === 16) || item.genre_ids?.includes(16);
+                                        const isDocumentary = details?.genres?.some(g => g.id === 99) || item.genre_ids?.includes(99);
+                                        const isJapanese = item.original_language === 'ja' || details?.original_language === 'ja';
+                                        
+                                        if (isDocumentary) {
+                                            return 'Documentary';
+                                        } else if (isAnimation && isJapanese) {
+                                            return item.media_type === 'movie' ? 'Anime Movie' : 'Anime Series';
+                                        } else if (isAnimation) {
+                                            return item.media_type === 'movie' ? 'Animated Movie' : 'Animated Series';
+                                        }
+                                        return item.media_type === 'movie' ? 'Movie' : 'Series';
+                                    })()} •{' '}
                                     {item.release_date?.substring(0, 4) || item.first_air_date?.substring(0, 4)}
                                 </span>
                                 <div style={{ marginTop: '4px' }}>
@@ -316,7 +375,10 @@ const AddModal = ({ item, onClose }) => {
 
                                 <div className="stats-preview">
                                     {item.media_type === 'movie' ? (
-                                        <span>Runtime: {details ? (details.runtime || '?') : '?'} min</span>
+                                        <span>Runtime: {details ? (() => {
+                                            const runtime = details.runtime || 0;
+                                            return runtime >= 60 ? `${Math.floor(runtime / 60)}h ${runtime % 60}m` : `${runtime}m`;
+                                        })() : '?'}</span>
                                     ) : (
                                         <span>{details ? (details.number_of_seasons || '?') : '?'} Seasons, {details ? (details.number_of_episodes || '?') : '?'} Episodes</span>
                                     )}
@@ -336,15 +398,17 @@ const AddModal = ({ item, onClose }) => {
                                             onChange={(e) => setWatchDate(e.target.value)}
                                             required={!isUnknownDate}
                                             disabled={isUnknownDate}
-                                            style={{ opacity: isUnknownDate ? 0.5 : 1 }}
+                                            readOnly={existingItem}
+                                            style={{ opacity: isUnknownDate ? 0.5 : 1, cursor: existingItem ? 'not-allowed' : 'auto' }}
                                         />
                                     </div>
-                                    <label className="checkbox-label" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', cursor: 'pointer' }}>
+                                    <label className="checkbox-label" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', cursor: existingItem ? 'not-allowed' : 'pointer' }}>
                                         <input
                                             type="checkbox"
                                             checked={isUnknownDate}
-                                            onChange={(e) => setIsUnknownDate(e.target.checked)}
-                                            style={{ width: 'auto' }}
+                                            onChange={(e) => !existingItem && setIsUnknownDate(e.target.checked)}
+                                            readOnly={existingItem}
+                                            style={{ width: 'auto', cursor: existingItem ? 'not-allowed' : 'pointer' }}
                                         />
                                         <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'none' }}>I don't remember the date</span>
                                     </label>
@@ -355,7 +419,8 @@ const AddModal = ({ item, onClose }) => {
                                     <button
                                         type="button"
                                         className={`fav-toggle ${isFavorite ? 'active' : ''}`}
-                                        onClick={() => setIsFavorite(!isFavorite)}
+                                        onClick={() => !existingItem && setIsFavorite(!isFavorite)}
+                                        style={{ cursor: existingItem ? 'not-allowed' : 'pointer' }}
                                     >
                                         <Heart size={24} fill={isFavorite ? 'var(--danger-color)' : 'transparent'} color={isFavorite ? 'var(--danger-color)' : 'var(--text-secondary)'} />
                                     </button>
@@ -379,13 +444,14 @@ const AddModal = ({ item, onClose }) => {
                                             return (
                                                 <div key={season.season_number} className="season-container" style={{ marginBottom: '8px', border: '1px solid var(--border-color)', borderRadius: '6px', overflow: 'hidden' }}>
                                                     <div className="season-header" style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 12px', backgroundColor: 'var(--bg-secondary)', cursor: 'pointer', alignItems: 'center' }} onClick={() => toggleExpandSeason(season.season_number)}>
-                                                        <label onClick={e => e.stopPropagation()} style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px', cursor: isFullyReleased && hasAiredEpisodes ? 'pointer' : 'not-allowed', opacity: isFullyReleased && hasAiredEpisodes ? 1 : 0.6 }}>
+                                                        <label onClick={e => e.stopPropagation()} style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px', cursor: (isFullyReleased && hasAiredEpisodes && !existingItem) ? 'pointer' : 'not-allowed', opacity: (!isFullyReleased || !hasAiredEpisodes) ? 0.6 : 1 }}>
                                                             <input
                                                                 type="checkbox"
                                                                 disabled={!isFullyReleased || !hasAiredEpisodes}
+                                                                readOnly={existingItem}
                                                                 checked={isFullyReleased && isAllAiredSelected}
-                                                                onChange={(e) => handleSeasonCheck(season.season_number, airedEpisodes, e.target.checked)}
-                                                                style={{ width: 'auto' }}
+                                                                onChange={(e) => !existingItem && handleSeasonCheck(season.season_number, airedEpisodes, e.target.checked)}
+                                                                style={{ width: 'auto', cursor: existingItem ? 'not-allowed' : 'pointer' }}
                                                             />
                                                             <span style={{ fontSize: '0.9rem', fontWeight: 500, display: 'flex', flexDirection: 'column' }}>
                                                                 Season {season.season_number}
@@ -405,13 +471,14 @@ const AddModal = ({ item, onClose }) => {
                                                             {(season.episodes || []).map(ep => {
                                                                 const isAired = ep.air_date && new Date(ep.air_date) <= today;
                                                                 return (
-                                                                    <label key={ep.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', cursor: isAired ? 'pointer' : 'not-allowed', margin: 0, padding: '4px 0', opacity: isAired ? 1 : 0.5 }}>
+                                                                    <label key={ep.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', cursor: (isAired && !existingItem) ? 'pointer' : 'not-allowed', margin: 0, padding: '4px 0', opacity: !isAired ? 0.5 : 1 }}>
                                                                         <input
                                                                             type="checkbox"
                                                                             disabled={!isAired}
+                                                                            readOnly={existingItem}
                                                                             checked={isAired && selectedEpisodes.has(`S${season.season_number}E${ep.episode_number}`)}
-                                                                            onChange={() => handleEpisodeCheck(season.season_number, ep.episode_number)}
-                                                                            style={{ width: 'auto' }}
+                                                                            onChange={() => !existingItem && handleEpisodeCheck(season.season_number, ep.episode_number)}
+                                                                            style={{ width: 'auto', cursor: existingItem ? 'not-allowed' : 'pointer' }}
                                                                         />
                                                                         <span style={{ color: 'var(--text-secondary)', minWidth: '35px' }}>Ep {ep.episode_number}</span>
                                                                         <span style={{ color: isAired && selectedEpisodes.has(`S${season.season_number}E${ep.episode_number}`) ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
@@ -438,7 +505,7 @@ const AddModal = ({ item, onClose }) => {
 
                             <div className="form-group" style={{ marginTop: '16px' }}>
                                 <label>Your Rating</label>
-                                <StarRating rating={rating} setRating={setRating} />
+                                <StarRating rating={rating} setRating={existingItem ? () => {} : setRating} />
                             </div>
 
                             <div className="form-group">
@@ -447,16 +514,29 @@ const AddModal = ({ item, onClose }) => {
                                     placeholder="What did you think of it?"
                                     value={userNotes}
                                     onChange={(e) => setUserNotes(e.target.value)}
+                                    readOnly={existingItem}
                                     rows={3}
+                                    style={{ cursor: existingItem ? 'not-allowed' : 'text' }}
                                 ></textarea>
                             </div>
                         </div>
 
                         <div className="modal-footer">
-                            <Button variant="ghost" onClick={onClose} type="button">Cancel</Button>
-                            <Button variant={existingItem ? 'danger' : 'primary'} type="submit" isLoading={isSubmitting}>
-                                {existingItem ? 'Remove from List' : 'Add to List'}
-                            </Button>
+                            {existingItem ? (
+                                <>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, padding: '0 8px' }}>
+                                        <span style={{ fontSize: '0.9rem', color: 'var(--success-color)', fontWeight: '500' }}>✓ Already in your list</span>
+                                    </div>
+                                    <Button variant="ghost" onClick={onClose} type="button">Close</Button>
+                                    <Button variant="danger" onClick={handleRemoveItem} type="button" isLoading={isSubmitting}>Remove</Button>
+                                    <Button variant="primary" onClick={handleEditItem} type="button">Edit</Button>
+                                </>
+                            ) : (
+                                <>
+                                    <Button variant="ghost" onClick={onClose} type="button">Cancel</Button>
+                                    <Button variant="primary" type="submit" isLoading={isSubmitting}>Add to List</Button>
+                                </>
+                            )}
                         </div>
                     </form>
                 )}
@@ -464,7 +544,14 @@ const AddModal = ({ item, onClose }) => {
         </div>
     );
 
-    return createPortal(modalContent, document.body);
+    return (
+        <>
+            {createPortal(modalContent, document.body)}
+            {showEditModal && existingItem && (
+                <EditModal item={existingItem} onClose={handleCloseEditModal} />
+            )}
+        </>
+    );
 };
 
 export default AddModal;

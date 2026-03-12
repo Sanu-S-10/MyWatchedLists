@@ -147,6 +147,7 @@ const EditModal = ({ item, onClose }) => {
         if (!isMovie) {
             let calculatedEpisodes = 0;
             let totalWatchTime = 0;
+            const seriesAvgRuntime = details?.episode_run_time?.[0] || item.episodeDuration || 0;
 
             selectedEpisodes.forEach(epStr => {
                 const [s, e] = epStr.replace('S', '').split('E').map(Number);
@@ -155,7 +156,9 @@ const EditModal = ({ item, onClose }) => {
                     const epData = seasonData.episodes.find(ep => ep.episode_number === e);
                     if (epData) {
                         calculatedEpisodes++;
-                        totalWatchTime += epData.runtime || details?.episode_run_time?.[0] || item.episodeDuration || 45;
+                        // Use actual episode runtime from TMDB (prefer episode-specific), fallback to series average
+                        const episodeRuntime = epData.runtime > 0 ? epData.runtime : seriesAvgRuntime;
+                        totalWatchTime += episodeRuntime;
                     }
                 }
             });
@@ -266,26 +269,25 @@ const EditModal = ({ item, onClose }) => {
                                         const airedEpisodes = season.episodes?.filter(ep => ep.air_date && new Date(ep.air_date) <= today) || [];
                                         const unreleasedEpisodes = season.episodes?.filter(ep => !ep.air_date || new Date(ep.air_date) > today) || [];
 
-                                        // Completely unreleased season
-                                        if (airedEpisodes.length === 0) return null;
-
                                         const isFullyReleased = unreleasedEpisodes.length === 0;
-                                        const isAllAiredSelected = airedEpisodes.length > 0 && airedEpisodes.every(ep => selectedEpisodes.has(`S${season.season_number}E${ep.episode_number}`));
+                                        const hasAiredEpisodes = airedEpisodes.length > 0;
+                                        const isAllAiredSelected = hasAiredEpisodes && airedEpisodes.every(ep => selectedEpisodes.has(`S${season.season_number}E${ep.episode_number}`));
 
                                         return (
                                             <div key={season.season_number} className="season-container" style={{ marginBottom: '8px', border: '1px solid var(--border-color)', borderRadius: '6px', overflow: 'hidden' }}>
                                                 <div className="season-header" style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 12px', backgroundColor: 'var(--bg-secondary)', cursor: 'pointer', alignItems: 'center' }} onClick={() => toggleExpandSeason(season.season_number)}>
-                                                    <label onClick={e => e.stopPropagation()} style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px', cursor: isFullyReleased ? 'pointer' : 'not-allowed', opacity: isFullyReleased ? 1 : 0.6 }}>
+                                                    <label onClick={e => e.stopPropagation()} style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px', cursor: isFullyReleased && hasAiredEpisodes ? 'pointer' : 'not-allowed', opacity: isFullyReleased && hasAiredEpisodes ? 1 : 0.6 }}>
                                                         <input
                                                             type="checkbox"
-                                                            disabled={!isFullyReleased}
+                                                            disabled={!isFullyReleased || !hasAiredEpisodes}
                                                             checked={isFullyReleased && isAllAiredSelected}
                                                             onChange={(e) => handleSeasonCheck(season.season_number, airedEpisodes, e.target.checked)}
                                                             style={{ width: 'auto' }}
                                                         />
                                                         <span style={{ fontSize: '0.9rem', fontWeight: 500, display: 'flex', flexDirection: 'column' }}>
                                                             Season {season.season_number}
-                                                            {!isFullyReleased && <span style={{ fontSize: '0.7rem', color: 'var(--warning-color)' }}>Currently Airing (Select individual episodes)</span>}
+                                                            {!isFullyReleased && hasAiredEpisodes && <span style={{ fontSize: '0.7rem', color: 'var(--warning-color)' }}>Currently Airing (Select individual episodes)</span>}
+                                                            {!hasAiredEpisodes && <span style={{ fontSize: '0.7rem', color: 'var(--warning-color)' }}>Upcoming Season</span>}
                                                         </span>
                                                     </label>
 

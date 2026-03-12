@@ -1,99 +1,374 @@
 .sidebar {
     width: 250px;
     height: 100vh;
-    background-color: var(--bg-secondary);
-    border-right: 1px solid var(--border-color);
+    background-color: color-mix(in srgb, var(--bg-color) 72%, var(--bg-secondary) 28%);
+    border-right: 1px solid color-mix(in srgb, var(--text-primary) 8%, transparent);
     display: flex;
     flex-direction: column;
     position: fixed;
     left: 0;
     top: 0;
     z-index: 100;
+    transition: width 250ms ease;
+}
+
+.sidebar.collapsed {
+    width: 82px;
+}
+
+.sidebar-full {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 18px 14px;
+}
+
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 18px;
+    gap: 10px;
+}
+
+.sidebar-collapse-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.sidebar-collapse-btn:hover {
+    background: color-mix(in srgb, var(--accent-color) 20%, transparent);
+    border-color: var(--accent-color);
+}
+
+.sidebar-collapse-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.sidebar-rail {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 18px 10px;
 }
 
 .sidebar-logo {
-    padding: 24px;
     display: flex;
     align-items: center;
-    gap: 12px;
-    border-bottom: 1px solid var(--border-color);
+    gap: 10px;
+}
+
+.sidebar-logo-rail {
+    padding: 6px 0 18px;
+    justify-content: center;
+}
+
+.sidebar-toggle-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.sidebar-toggle-btn:hover {
+    background: color-mix(in srgb, var(--accent-color) 20%, transparent);
+    border-color: var(--accent-color);
+}
+
+.sidebar-toggle-btn svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
 }
 
 .logo-icon {
     background-color: var(--accent-color);
-    color: white;
-    width: 40px;
-    height: 40px;
+    color: var(--accent-contrast);
+    width: 34px;
+    height: 34px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: bold;
-    border-radius: 8px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    letter-spacing: 0.03em;
 }
 
 .sidebar-logo h2 {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1;
+}
+
+.sidebar-nav,
+.sidebar-nav-rail {
+    flex: 1;
+    padding: 10px 0 18px;
+    overflow: visible;
+}
+
+.sidebar-nav ul,
+.sidebar-nav-rail ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 0;
+}
+
+.sidebar-nav li a,
+.bottom-link,
+.more-trigger {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding: 12px 14px;
+    color: color-mix(in srgb, var(--text-primary) 90%, transparent);
+    border-radius: 999px;
     font-weight: 700;
+    letter-spacing: 0.01em;
+    transition: all 0.2s ease;
+    width: 100%;
+    min-height: 48px;
+    border: 1px solid transparent;
+    font-size: 1.02rem;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+}
+
+.rail-link {
+    width: 48px;
+    min-height: 48px;
+    padding: 12px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    color: color-mix(in srgb, var(--text-primary) 90%, transparent);
+    transition: all 0.2s ease;
+}
+
+.rail-more {
+    cursor: pointer;
+}
+
+.sidebar-nav li a svg,
+.bottom-link svg,
+.more-trigger svg,
+.rail-link svg {
+    width: 19px;
+    height: 19px;
+    flex-shrink: 0;
+    color: color-mix(in srgb, var(--text-primary) 88%, transparent);
+}
+
+.sidebar-nav li:hover a,
+.bottom-link:hover,
+.more-trigger:hover,
+.rail-link:hover {
+    background-color: color-mix(in srgb, var(--text-primary) 8%, transparent);
     color: var(--text-primary);
 }
 
-.sidebar-nav {
-    flex: 1;
-    padding: 24px 0;
-    overflow-y: auto;
+.sidebar-nav>ul>li.active>a,
+.bottom-link.active,
+.more-trigger.active,
+.rail-link.active {
+    background-color: var(--accent-color);
+    color: var(--accent-contrast);
+    box-shadow: none;
 }
 
-.sidebar-nav ul {
+.sidebar-nav>ul>li.active>a svg,
+.bottom-link.active svg,
+.more-trigger.active svg,
+.rail-link.active svg {
+    color: var(--accent-color);
+    background-color: var(--accent-contrast);
+    border-radius: 999px;
+    padding: 3px;
+    box-sizing: content-box;
+}
+
+.more-menu {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.more-menu-rail {
+    position: relative;
+}
+
+.more-trigger .more-chevron {
+    margin-left: auto;
+    width: 16px;
+    height: 16px;
+    background: transparent;
+    color: color-mix(in srgb, var(--text-primary) 75%, transparent);
+    padding: 0;
+    transition: transform 0.2s ease;
+}
+
+.more-trigger .more-chevron.open {
+    transform: rotate(90deg);
+}
+
+.submenu-list {
     list-style: none;
     display: flex;
     flex-direction: column;
     gap: 8px;
-    padding: 0 16px;
+    padding: 8px;
+    position: absolute;
+    left: calc(100% + 10px);
+    top: 0;
+    min-width: 160px;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    z-index: 120;
 }
 
-.sidebar-nav li a,
-.bottom-link {
+.submenu-list-rail {
+    left: calc(100% + 6px);
+    top: -8px;
+}
+
+.submenu-list li a {
+    min-height: 42px;
+    padding: 9px 12px;
+    font-size: 0.94rem;
+}
+
+.submenu-list .submenu-link {
     display: flex;
     align-items: center;
-    gap: 16px;
-    padding: 12px 16px;
-    color: var(--text-secondary);
-    border-radius: 8px;
-    font-weight: 500;
+    gap: 13px;
+    padding: 9px 12px;
+    color: color-mix(in srgb, var(--text-primary) 90%, transparent);
+    border-radius: 999px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
     transition: all 0.2s ease;
     width: 100%;
+    min-height: 42px;
+    border: 1px solid transparent;
+    font-size: 0.94rem;
+    background: transparent;
+    text-decoration: none;
 }
 
-.sidebar-nav li:hover a,
-.bottom-link:hover {
-    background-color: var(--bg-tertiary);
+.submenu-list .submenu-link:hover {
+    background-color: color-mix(in srgb, var(--text-primary) 8%, transparent);
     color: var(--text-primary);
 }
 
-.sidebar-nav li.active a,
-.bottom-link.active {
-    background-color: var(--accent-color);
-    color: white;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+.submenu-list .submenu-link svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    color: color-mix(in srgb, var(--text-primary) 88%, transparent);
 }
 
-.sidebar-bottom {
-    padding: 24px 16px;
-    border-top: 1px solid var(--border-color);
+.submenu-list .submenu-link.active {
+    background-color: var(--accent-color);
+    color: var(--text-primary);
+}
+
+.submenu-list .submenu-link.active svg {
+    color: var(--accent-color);
+    background-color: var(--text-primary);
+    border-radius: 999px;
+    padding: 3px;
+    box-sizing: content-box;
+}
+
+.sidebar-bottom,
+.sidebar-bottom-rail {
+    padding: 14px 0 0;
+    border-top: 1px solid color-mix(in srgb, var(--text-primary) 8%, transparent);
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
 }
 
-.logout-btn {
-    background: transparent;
-    border: none;
-    text-align: left;
-    font-size: 1rem;
+.sidebar-bottom-rail {
+    align-items: center;
 }
 
-.logout-btn:hover {
-    color: var(--danger-color);
+/* Instant Tooltip Styles */
+.rail-link,
+.sidebar-toggle-btn {
+    position: relative;
+}
+
+.rail-link::after,
+.sidebar-toggle-btn::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: calc(100% + 12px);
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.1s ease, visibility 0.1s ease;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    border: 1px solid color-mix(in srgb, var(--text-primary) 10%, transparent);
+}
+
+.rail-link:hover::after,
+.sidebar-toggle-btn:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Hide when active or focused (clicked), and override hover until they leave completely */
+.rail-link:active::after,
+.sidebar-toggle-btn:active::after,
+.rail-link:focus::after,
+.sidebar-toggle-btn:focus::after,
+.rail-link.active:focus::after,
+.sidebar-toggle-btn.active:focus::after {
+    opacity: 0;
+    visibility: hidden;
+    transition: none;
+    /* Disappear instantly on click */
 }
 
 @media (max-width: 768px) {

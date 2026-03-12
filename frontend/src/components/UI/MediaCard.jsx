@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Star, Heart } from 'lucide-react';
 import './MediaCard.css';
 
-const MediaCard = ({ item, onClick }) => {
+const MediaCard = ({ item, onClick, pageType }) => {
     const posterUrl = item.posterPath
         ? `https://image.tmdb.org/t/p/w500${item.posterPath}`
         : 'https://via.placeholder.com/500x750?text=No+Poster';
@@ -17,7 +17,7 @@ const MediaCard = ({ item, onClick }) => {
         if (watchedEpisodeCount === 0) {
             return 'upcoming';
         } else if (watchedEpisodeCount >= totalEpisodes && totalEpisodes > 0) {
-            return 'active';
+            return 'completed';
         } else {
             return 'progress';
         }
@@ -54,13 +54,19 @@ const MediaCard = ({ item, onClick }) => {
                         {(isAnimeSeries || isAnimatedSeries) ? (
                             <>
                                 <span className="media-type-desktop">
-                                    {isAnimeSeries ? 'Anime Series' : 'Animated Series'}
+                                    {(pageType === 'anime' || pageType === 'animation') 
+                                        ? 'Series' 
+                                        : (isAnimeSeries ? 'Anime Series' : 'Animated Series')}
                                 </span>
                                 <span className="media-type-mobile">Series</span>
                             </>
+                        ) : item.subType === 'documentary' ? (
+                            'Documentary'
                         ) : (
                             <>
-                                {item.subType === 'anime' ? 'Anime ' : item.subType === 'animation' ? 'Animated ' : ''}
+                                {(pageType === 'anime' || pageType === 'animation') 
+                                    ? '' 
+                                    : (item.subType === 'anime' ? 'Anime ' : item.subType === 'animation' ? 'Animated ' : '')}
                                 {item.mediaType === 'movie' ? 'Movie' : 'Series'}
                             </>
                         )}

@@ -165,10 +165,12 @@
     opacity: 0;
     transition: opacity 0.2s;
     z-index: 10;
+    pointer-events: none;
 }
 
 .card-wrapper:hover .card-actions-hover {
     opacity: 1;
+    pointer-events: auto;
 }
 
 .delete-btn,
@@ -205,6 +207,10 @@
 
     .title-search-input {
         width: 140px !important;
+    }
+
+    .card-actions-hover {
+        display: none !important;
     }
 }
 
@@ -404,6 +410,7 @@
     background-color: rgba(251, 146, 60, 0.9);
 }
 
+.meta-status.completed,
 .meta-status.active {
     background-color: rgba(34, 197, 94, 0.9);
 }
@@ -633,9 +640,7 @@
     }
 
     .list-item-actions {
-        display: flex;
-        gap: 6px;
-        flex-shrink: 0;
+        display: none !important;
     }
 
     .list-item-actions button {

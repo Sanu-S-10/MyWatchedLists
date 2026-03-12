@@ -19,14 +19,21 @@ const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
     const [filterCountry, setFilterCountry] = useState('');
     const [filterMediaType, setFilterMediaType] = useState(''); // 'movie', 'series', or ''
     const [filterTitle, setFilterTitle] = useState('');
-    const [filterStatus, setFilterStatus] = useState(''); // 'upcoming', 'progress', 'active', or ''
-    const [sortBy, setSortBy] = useState('watchDateDesc'); // watchDateDesc, ratingDesc, yearDesc
+    const [filterStatus, setFilterStatus] = useState(''); // 'upcoming', 'progress', 'completed', 'new_season', or ''
+    const [sortBy, setSortBy] = useState('createdAtDesc'); // createdAtDesc, lastWatchedDesc, ratingDesc, yearDesc
     const [showFilters, setShowFilters] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
     const [viewingItem, setViewingItem] = useState(null);
     const [itemToDelete, setItemToDelete] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
     const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+
+    const normalizeSeriesStatus = (status) => {
+        if (!status) return '';
+        const normalized = String(status).toLowerCase();
+        if (normalized === 'active') return 'completed';
+        return normalized;
+    };
 
     // Create unique keys for each list type
     const viewModeKey = `contentListViewMode_${type}`;
@@ -48,7 +55,7 @@ const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
             mediaType: '',
             title: '',
             status: '',
-            sortBy: 'watchDateDesc'
+            sortBy: 'createdAtDesc'
         };
 
         if (savedFilters) {
@@ -60,25 +67,15 @@ const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
                 setFilterCountry(newFilterState.country || '');
                 setFilterMediaType(newFilterState.mediaType || '');
                 setFilterTitle(newFilterState.title || '');
-                setFilterStatus(newFilterState.status || '');
-                setSortBy(newFilterState.sortBy || 'watchDateDesc');
+                setFilterStatus(normalizeSeriesStatus(newFilterState.status || ''));
+                setSortBy(newFilterState.sortBy || 'createdAtDesc');
             } catch (error) {
                 console.error('Failed to load filters:', error);
             }
         }
 
-        // Check if current type has active filters and open filter panel accordingly
-        const hasActiveFilters = 
-            newFilterState.genre !== '' || 
-            newFilterState.rating > 0 || 
-            newFilterState.year !== '' || 
-            newFilterState.country !== '' || 
-            newFilterState.mediaType !== '' || 
-            newFilterState.title !== '' || 
-            newFilterState.status !== '' ||
-            newFilterState.sortBy !== 'watchDateDesc';
-
-        setShowFilters(hasActiveFilters);
+        // Keep filter panel closed when switching sections
+        setShowFilters(false);
     }, [type, viewModeKey, filterStateKey]);
 
     // Save view preference to localStorage
@@ -101,6 +98,15 @@ const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
         };
         localStorage.setItem(filterStateKey, JSON.stringify(filters));
     }, [filterGenre, filterRating, filterYear, filterCountry, filterMediaType, filterTitle, filterStatus, sortBy, filterStateKey]);
+
+    useEffect(() => {
+        const normalizedStatus = filterStatus
+            ? (String(filterStatus).toLowerCase() === 'active' ? 'completed' : String(filterStatus).toLowerCase())
+            : '';
+        if (filterStatus !== normalizedStatus) {
+            setFilterStatus(normalizedStatus);
+        }
+    }, [filterStatus]);
 
     // Extract unique genres for the filter dropdown - only for current list type
     const availableGenres = useMemo(() => {
@@ -147,10 +153,40 @@ const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
         if (watchedEpisodeCount === 0) {
             return 'upcoming'; // Not started
         } else if (watchedEpisodeCount >= totalEpisodes && totalEpisodes > 0) {
-            return 'active'; // Completed/Active
+            return 'completed'; // Completed
         } else {
             return 'progress'; // Partially watched
         }
+    };
+
+    // Check if a series has new season released (unwatched season after watched seasons)
+    const hasNewSeasonUnwatched = (item) => {
+        if (item.mediaType !== 'series') return false;
+        if (!item.watchedEpisodes || item.watchedEpisodes.length === 0) return false;
+        if (!item.seasons) return false;
+
+        // Check if manually flagged
+        if (item.hasNewSeasonReleased) return true;
+
+        // Extract season numbers from watched episodes (e.g., "S1E1" -> 1)
+        const watchedSeasons = new Set();
+        item.watchedEpisodes.forEach(ep => {
+            if (typeof ep === 'string' && ep.startsWith('S')) {
+                const seasonMatch = ep.match(/S(\d+)/);
+                if (seasonMatch) {
+                    watchedSeasons.add(parseInt(seasonMatch[1]));
+                }
+            }
+        });
+
+        // If no watched episodes in standard format, return false
+        if (watchedSeasons.size === 0) return false;
+
+        // Get highest watched season
+        const highestWatchedSeason = Math.max(...Array.from(watchedSeasons));
+
+        // If there are more seasons than the highest watched season, there's a new season
+        return item.seasons > highestWatchedSeason;
     };
 
     // Extract unique countries (store ISO codes, display full names) - only for current list type
@@ -189,6 +225,11 @@ const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
 
         const statuses = new Set();
         items.forEach(item => {
+            // Add new season status if applicable (auto-detect)
+            if (item.mediaType === 'series' && hasNewSeasonUnwatched(item)) {
+                statuses.add('new_season');
+            }
+            // Add regular status
             const status = getSeriesStatus(item);
             if (status) {
                 statuses.add(status);
@@ -235,17 +276,25 @@ const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
         }
 
         if (filterStatus) {
-            items = items.filter(item => getSeriesStatus(item) === filterStatus);
+            if (filterStatus === 'new_season') {
+                items = items.filter(item => item.mediaType === 'series' && hasNewSeasonUnwatched(item));
+            } else {
+                items = items.filter(item => getSeriesStatus(item) === filterStatus);
+            }
         }
 
-        // Apply media type filter for anime/animation
-        if ((type === 'anime' || type === 'animation') && filterMediaType) {
+        // Apply media type filter for anime/animation/favorites
+        if ((type === 'anime' || type === 'animation' || type === 'favorites') && filterMediaType) {
             items = items.filter(item => item.mediaType === filterMediaType);
         }
 
         // Sort
         items.sort((a, b) => {
             switch (sortBy) {
+                case 'createdAtDesc':
+                    const createdA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                    const createdB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                    return createdB - createdA;
                 case 'ratingDesc':
                     return b.rating - a.rating;
                 case 'yearDesc':
@@ -376,22 +425,31 @@ const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
                                 <label>Series Status</label>
                                 <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
                                     <option value="">All Statuses</option>
-                                    {availableStatuses.map(status => (
-                                        <option key={status} value={status}>
-                                            {status.charAt(0).toUpperCase() + status.slice(1)}
-                                        </option>
-                                    ))}
+                                    {availableStatuses.map(status => {
+                                        const statusLabel = status === 'new_season' 
+                                            ? 'New Season Released' 
+                                            : status.charAt(0).toUpperCase() + status.slice(1);
+                                        return (
+                                            <option key={status} value={status}>
+                                                {statusLabel}
+                                            </option>
+                                        );
+                                    })}
                                 </select>
                             </div>
                         )
                     )}
-                    {(type === 'anime' || type === 'animation') && (
+                    {(type === 'anime' || type === 'animation' || type === 'favorites') && (
                         <div className="filter-group">
                             <label>Type</label>
                             <select value={filterMediaType} onChange={(e) => setFilterMediaType(e.target.value)}>
                                 <option value="">All Types</option>
-                                <option value="movie">{type === 'anime' ? 'Anime' : 'Animation'} Movies</option>
-                                <option value="series">{type === 'anime' ? 'Anime' : 'Animation'} Series</option>
+                                <option value="movie">
+                                    {type === 'anime' ? 'Anime' : type === 'animation' ? 'Animation' : 'Favorite'} Movies
+                                </option>
+                                <option value="series">
+                                    {type === 'anime' ? 'Anime' : type === 'animation' ? 'Animation' : 'Favorite'} Series
+                                </option>
                             </select>
                         </div>
                     )}
@@ -400,7 +458,7 @@ const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
                         <div className="sort-wrapper">
                             <SortDesc size={16} className="sort-icon" />
                             <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="sort-select">
-                                <option value="watchDateDesc">Recent Watches</option>
+                                <option value="createdAtDesc">Recently Watched</option>
                                 <option value="ratingDesc">Highest Rated</option>
                                 <option value="yearDesc">Newest Release</option>
                             </select>
@@ -415,7 +473,7 @@ const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
                             setFilterCountry('');
                             setFilterMediaType('');
                             setFilterStatus('');
-                            setSortBy('watchDateDesc');
+                            setSortBy('createdAtDesc');
                         }}>Clear All</button>
                     </div>
                 </div>
@@ -431,7 +489,7 @@ const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
                         <div key={item._id} className="card-wrapper">
                             {viewMode === 'grid' ? (
                                 <>
-                                    <MediaCard item={item} onClick={() => setViewingItem(item)} />
+                                    <MediaCard item={item} onClick={() => setViewingItem(item)} pageType={type} />
                                     <div className="card-actions-hover">
                                         <button className="edit-btn" onClick={(e) => { e.stopPropagation(); setEditingItem(item); }} title="Edit">
                                             <Edit2 size={14} />
@@ -455,7 +513,9 @@ const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
                                                 {item.releaseDate ? item.releaseDate.substring(0, 4) : item.first_air_date ? item.first_air_date.substring(0, 4) : 'N/A'}
                                             </span>
                                             <span className="meta-type">
-                                                {item.subType === 'anime' ? 'Anime ' : item.subType === 'animation' ? 'Animated ' : ''}
+                                                {(type === 'anime' || type === 'animation') 
+                                                    ? '' 
+                                                    : (item.subType === 'anime' ? 'Anime ' : item.subType === 'animation' ? 'Animated ' : '')}
                                                 {item.mediaType === 'movie' ? 'Movie' : 'Series'}
                                             </span>
                                             {getSeriesStatus(item) && (

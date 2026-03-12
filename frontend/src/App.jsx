@@ -15,6 +15,10 @@ const ContentList = lazy(() => import('./pages/ContentList/ContentList'));
 const Watch = lazy(() => import('./pages/Watch/Watch'));
 const Settings = lazy(() => import('./pages/Settings/Settings'));
 const AIFilter = lazy(() => import('./pages/AIFilter/AIFilter'));
+const Trending = lazy(() => import('./pages/Trending/Trending'));
+const Lists = lazy(() => import('./pages/Lists/Lists'));
+const SharedList = lazy(() => import('./pages/Lists/SharedList'));
+const More = lazy(() => import('./pages/More/More'));
 
 const ProtectedRoute = ({ children }) => {
     const { user, loading } = useContext(AuthContext);
@@ -40,6 +44,7 @@ const AppRoutes = () => {
                 <Route path="/" element={<PublicRoute><HomePage /></PublicRoute>} />
                 <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
                 <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+                <Route path="/shared-list/:shareId" element={<SharedList />} />
 
                 {/* Protected routes - only for authenticated users */}
                 <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
@@ -53,7 +58,10 @@ const AppRoutes = () => {
                 <Route path="/favorites" element={<ProtectedRoute><ContentList type="favorites" title="My Favorites" /></ProtectedRoute>} />
                 <Route path="/search" element={<ProtectedRoute><SearchPage /></ProtectedRoute>} />
                 <Route path="/aifilter" element={<ProtectedRoute><AIFilter /></ProtectedRoute>} />
+                <Route path="/trending" element={<ProtectedRoute><Trending /></ProtectedRoute>} />
+                <Route path="/lists" element={<ProtectedRoute><Lists /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                    <Route path="/more" element={<ProtectedRoute><More /></ProtectedRoute>} />
             </Routes>
         </Suspense>
     );

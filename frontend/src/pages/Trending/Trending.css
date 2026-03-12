@@ -1,0 +1,109 @@
+.trending-page {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.trending-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.page-header h1 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.trending-section {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.trending-section h2 {
+    margin-bottom: 16px;
+}
+
+.trending-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 14px;
+}
+
+.trending-card {
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.trending-card:hover,
+.trending-card:focus-visible {
+    transform: translateY(-4px);
+    border-color: var(--accent-color);
+    outline: none;
+}
+
+.trending-card img {
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    object-fit: cover;
+    display: block;
+}
+
+.trending-card-body {
+    padding: 10px;
+}
+
+.trending-card-body h3 {
+    font-size: 0.95rem;
+    margin-bottom: 4px;
+}
+
+.trending-card-body p {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+}
+
+.trending-loading,
+.trending-error,
+.trending-empty {
+    color: var(--text-secondary);
+}
+
+.trending-error {
+    color: var(--danger-color);
+}
+
+.trending-type-btn {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.trending-type-btn.active {
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+    background-color: var(--bg-tertiary);
+}
+
+@media (min-width: 769px) {
+    .trending-toggle {
+        width: 240px;
+    }
+
+    .trending-type-btn {
+        padding: 7px 10px;
+        font-size: 0.82rem;
+        border-radius: 7px;
+    }
+}

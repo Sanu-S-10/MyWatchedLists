@@ -64,7 +64,8 @@ const AIFilter = () => {
             }
         } catch (error) {
             console.error('AI Filter Error:', error);
-            addToast(error.message || 'Error processing your request', 'error');
+            const errorMessage = error.response?.data?.message || error.message || 'Error processing your request';
+            addToast(errorMessage, 'error');
             setFilteredItems([]);
         } finally {
             setIsLoading(false);
