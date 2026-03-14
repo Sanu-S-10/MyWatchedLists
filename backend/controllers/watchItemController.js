@@ -226,33 +226,31 @@ const clearWatchHistory = async (req, res) => {
 // @access  Private
 const aiFilterItems = async (req, res) => {
     try {
-        const { prompt } = req.body;
+        let { prompt } = req.body;
         if (!prompt) {
             return res.status(400).json({ message: 'Prompt is required' });
         }
-
+        // Sanitize prompt: remove dangerous characters, limit length
+        prompt = String(prompt).replace(/[<>\"'`]/g, '').trim();
+        if (prompt.length > 200) {
+            prompt = prompt.slice(0, 200);
+        }
         // Fetch user's entire watch history
         const watchHistory = await WatchItem.find({ user: req.user._id }).lean();
-
         if (watchHistory.length === 0) {
             return res.json([]);
         }
-
         // Check if user is asking about production company
         const isProductionCompanyQuery = isLikelyProductionCompanyQuery(prompt);
-
         if (isProductionCompanyQuery) {
             return await filterByProductionCompany(prompt, watchHistory, res);
         }
-
         const heuristicFallback = filterByHeuristics(prompt, watchHistory);
-
         // Check if user is asking about an actor/director via determinisitic TMDB Person Search
         const isPersonQuery = await filterByPerson(prompt, watchHistory, res);
         if (isPersonQuery) {
             return; // We already returned the matched results
         }
-
         // Otherwise use Gemini for general filtering
         const validItems = watchHistory.map(item => ({
             _id: item._id.toString(),
@@ -262,15 +260,12 @@ const aiFilterItems = async (req, res) => {
             origin: item.originCountry || '',
             genres: Array.isArray(item.genres) ? item.genres.map(g => g.name).join(', ') : ''
         }));
-
         // Initialize Gemini
         if (!process.env.GEMINI_API_KEY) {
             res.set('X-AI-Filter-Mode', 'basic');
             return res.json(heuristicFallback);
         }
-
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
         const modelsToTry = [
             "gemini-2.5-flash",
             "gemini-2.0-flash",
@@ -278,19 +273,7 @@ const aiFilterItems = async (req, res) => {
             "gemini-3-flash-preview",
             "gemma-3-27b-it"
         ];
-
-        const systemInstruction = `You are an expert film database. The user wants to filter their watched list using the prompt: "${prompt}". 
-Here is their watched list in JSON format: ${JSON.stringify(validItems)}.
-
-CRITICAL INSTRUCTIONS:
-1. Return ONLY a valid JSON array of "_id" strings for items that EXACTLY match the prompt.
-2. BE EXTREMELY CONSERVATIVE. Do NOT guess. If you do not know for an absolute certainty that an item matches, DO NOT include it.
-3. If the user asks for a specific actor, actress, or director, you MUST verify they are actually credited in that specific movie/series. If you are not 100% positive, omit it.
-4. It is much better to return [] than to include incorrect items.
-5. Example: If they ask for "David Dastmalchian", DO NOT return John Wick.
-
-Output strictly JSON. No markdown, no text. Example output: ["1", "5"] or []`;
-
+        const systemInstruction = `You are an expert film database. The user wants to filter their watched list using the prompt: "${prompt}". \nHere is their watched list in JSON format: ${JSON.stringify(validItems)}.\n\nCRITICAL INSTRUCTIONS:\n1. Return ONLY a valid JSON array of "_id" strings for items that EXACTLY match the prompt.\n2. BE EXTREMELY CONSERVATIVE. Do NOT guess. If you do not know for an absolute certainty that an item matches, DO NOT include it.\n3. If the user asks for a specific actor, actress, or director, you MUST verify they are actually credited in that specific movie/series. If you are not 100% positive, omit it.\n4. It is much better to return [] than to include incorrect items.\n5. Example: If they ask for "David Dastmalchian", DO NOT return John Wick.\n\nOutput strictly JSON. No markdown, no text. Example output: ["1", "5"] or []`;
         let textResult;
         for (const modelName of modelsToTry) {
             try {
@@ -309,20 +292,17 @@ Output strictly JSON. No markdown, no text. Example output: ["1", "5"] or []`;
                 continue; // Try the next model
             }
         }
-
         if (!textResult) {
             console.warn('All available AI models exhausted, failed, or quota reached. Using heuristic fallback.');
             res.set('X-AI-Filter-Mode', 'basic');
             return res.json(heuristicFallback);
         }
-
         // Clean up markdown optionally returned by Gemini
-        if (textResult.startsWith('\`\`\`json')) {
-            textResult = textResult.replace(/^\`\`\`json/, '').replace(/\`\`\`$/, '').trim();
-        } else if (textResult.startsWith('\`\`\`')) {
-            textResult = textResult.replace(/^\`\`\`/, '').replace(/\`\`\`$/, '').trim();
+        if (textResult.startsWith('```json')) {
+            textResult = textResult.replace(/^```json/, '').replace(/```$/, '').trim();
+        } else if (textResult.startsWith('```')) {
+            textResult = textResult.replace(/^```/, '').replace(/```$/, '').trim();
         }
-
         let matchedIds = [];
         try {
             matchedIds = JSON.parse(textResult);
@@ -333,13 +313,10 @@ Output strictly JSON. No markdown, no text. Example output: ["1", "5"] or []`;
             console.error('Failed to parse Gemini response as JSON:', textResult);
             matchedIds = heuristicFallback.map(item => item._id.toString());
         }
-
         // Return the full objects for the matched IDs
         const filteredHistory = watchHistory.filter(item => matchedIds.includes(item._id.toString()));
-
         // Sort by watchDate descending
         filteredHistory.sort((a, b) => new Date(b.watchDate) - new Date(a.watchDate));
-
         res.set('X-AI-Filter-Mode', 'ai');
         res.json(filteredHistory);
     } catch (error) {

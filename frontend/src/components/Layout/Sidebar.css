@@ -319,6 +319,84 @@
     gap: 10px;
 }
 
+[data-theme="light"] .sidebar {
+    background: linear-gradient(180deg, #2f5edc 0%, #3158d3 45%, #2b4ec0 100%);
+    border-right: none;
+    box-shadow: 8px 0 24px rgba(37, 99, 235, 0.18);
+}
+
+[data-theme="light"] .sidebar-logo h2,
+[data-theme="light"] .sidebar-collapse-btn,
+[data-theme="light"] .sidebar-toggle-btn,
+[data-theme="light"] .sidebar-nav li a,
+[data-theme="light"] .bottom-link,
+[data-theme="light"] .more-trigger,
+[data-theme="light"] .rail-link,
+[data-theme="light"] .submenu-list .submenu-link {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+[data-theme="light"] .sidebar-nav li a svg,
+[data-theme="light"] .bottom-link svg,
+[data-theme="light"] .more-trigger svg,
+[data-theme="light"] .rail-link svg,
+[data-theme="light"] .submenu-list .submenu-link svg,
+[data-theme="light"] .more-trigger .more-chevron {
+    color: rgba(255, 255, 255, 0.88);
+}
+
+[data-theme="light"] .logo-icon {
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    backdrop-filter: blur(10px);
+}
+
+[data-theme="light"] .sidebar-collapse-btn:hover,
+[data-theme="light"] .sidebar-toggle-btn:hover,
+[data-theme="light"] .sidebar-nav li:hover a,
+[data-theme="light"] .bottom-link:hover,
+[data-theme="light"] .more-trigger:hover,
+[data-theme="light"] .rail-link:hover,
+[data-theme="light"] .submenu-list .submenu-link:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    border-color: transparent;
+}
+
+[data-theme="light"] .sidebar-nav > ul > li.active > a,
+[data-theme="light"] .bottom-link.active,
+[data-theme="light"] .more-trigger.active,
+[data-theme="light"] .rail-link.active,
+[data-theme="light"] .submenu-list .submenu-link.active {
+    background: rgba(255, 255, 255, 0.14);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="light"] .sidebar-nav > ul > li.active > a svg,
+[data-theme="light"] .bottom-link.active svg,
+[data-theme="light"] .more-trigger.active svg,
+[data-theme="light"] .rail-link.active svg,
+[data-theme="light"] .submenu-list .submenu-link.active svg {
+    color: #ffffff;
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+}
+
+[data-theme="light"] .sidebar-bottom,
+[data-theme="light"] .sidebar-bottom-rail {
+    border-top-color: rgba(255, 255, 255, 0.14);
+}
+
+[data-theme="light"] .submenu-list {
+    background: linear-gradient(180deg, #3a67e1 0%, #3158d3 100%);
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 18px 36px rgba(20, 40, 110, 0.28);
+}
+
 .sidebar-bottom-rail {
     align-items: center;
 }

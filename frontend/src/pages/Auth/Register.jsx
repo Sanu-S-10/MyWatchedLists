@@ -4,6 +4,7 @@ import { AuthContext } from '../../context/AuthContext';
 import { ToastContext } from '../../context/ToastContext';
 import Input from '../../components/UI/Input';
 import Button from '../../components/UI/Button';
+import AuthLayout from './AuthLayout';
 import './Auth.css';
 
 const Register = () => {
@@ -44,54 +45,57 @@ const Register = () => {
         }
     };
 
+    const highlights = [
+        { value: 'AI Picks', label: 'Faster recommendations matched to your vibe' },
+        { value: 'History', label: 'Keep every movie, series, and anime in one timeline' },
+        { value: 'Lists', label: 'Build curated collections worth sharing' }
+    ];
+
     return (
-        <div className="auth-container">
-            <div className="auth-card">
-                <div className="auth-header">
-                    <h2>Create Account</h2>
-                    <p>Join MyWatchedList today</p>
-                </div>
+        <AuthLayout
+            eyebrow="Build your collection in style"
+            headline="Create your account and step into your personal world of movies and serie"
+            description="Start with a cinematic backdrop, then move straight into ratings, AI suggestions, watch history, and custom lists."
+            cardTitle="Create Account"
+            cardSubtitle="Join MyWatchedList today"
+            highlights={highlights}
+            footer={<p>Already have an account? <Link to="/login">Sign in</Link></p>}
+        >
+            <form onSubmit={handleSubmit} className="auth-form">
+                <Input
+                    label="Username"
+                    type="text"
+                    placeholder="Choose a username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                />
+                <Input
+                    label="Email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                />
+                <Input
+                    label="Password"
+                    type="password"
+                    placeholder="Create a password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                />
+                <Input
+                    label="Confirm Password"
+                    type="password"
+                    placeholder="Confirm your password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                />
 
-                <form onSubmit={handleSubmit} className="auth-form">
-                    <Input
-                        label="Username"
-                        type="text"
-                        placeholder="Choose a username"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                    />
-                    <Input
-                        label="Email"
-                        type="email"
-                        placeholder="Enter your email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                    />
-                    <Input
-                        label="Password"
-                        type="password"
-                        placeholder="Create a password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                    />
-                    <Input
-                        label="Confirm Password"
-                        type="password"
-                        placeholder="Confirm your password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                    />
-
-                    <Button type="submit" fullWidth isLoading={isLoading}>
-                        Sign Up
-                    </Button>
-                </form>
-
-                <div className="auth-footer">
-                    <p>Already have an account? <Link to="/login">Sign in</Link></p>
-                </div>
-            </div>
-        </div>
+                <Button type="submit" fullWidth isLoading={isLoading} className="auth-submit-button">
+                    Sign Up
+                </Button>
+            </form>
+        </AuthLayout>
     );
 };
 

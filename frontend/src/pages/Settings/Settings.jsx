@@ -70,10 +70,16 @@ const Settings = () => {
 
     const handlePasswordUpdate = async (e) => {
         e.preventDefault();
+        // Enforce minimum password requirements
+        if (password.length < 8) {
+            return addToast('Password must be at least 8 characters', 'error');
+        }
+        if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password)) {
+            return addToast('Password must include uppercase, lowercase, and a number', 'error');
+        }
         if (password !== confirmPassword) {
             return addToast('Passwords do not match', 'error');
         }
-
         setIsUpdatingAuth(true);
         try {
             await updateProfile({ password });

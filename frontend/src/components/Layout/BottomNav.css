@@ -31,12 +31,65 @@
     color: var(--text-secondary);
     font-size: 0.75rem;
     font-weight: 500;
-    transition: color 0.2s ease;
+    transition: color 0.2s ease, transform 0.14s ease;
     padding: 4px;
+    transform-origin: center;
+    will-change: transform;
+}
+
+.bottom-nav a svg {
+    transition: transform 0.14s ease;
+}
+
+.bottom-nav a:active {
+    transform: scale(0.9);
+}
+
+.bottom-nav a:active svg {
+    transform: scale(0.92);
 }
 
 .bottom-nav li.active a {
     color: var(--accent-color);
+    animation: nav-item-pop 0.22s ease;
+}
+
+.bottom-nav li.active a svg {
+    animation: nav-icon-pop 0.22s ease;
+}
+
+@keyframes nav-item-pop {
+    0% {
+        transform: scale(0.94);
+    }
+    65% {
+        transform: scale(1.06);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes nav-icon-pop {
+    0% {
+        transform: translateY(0) scale(0.9);
+    }
+    65% {
+        transform: translateY(-1px) scale(1.08);
+    }
+    100% {
+        transform: translateY(0) scale(1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bottom-nav a,
+    .bottom-nav a svg,
+    .bottom-nav li.active a,
+    .bottom-nav li.active a svg {
+        animation: none;
+        transition: none;
+    }
 }
 
 @media (max-width: 768px) {

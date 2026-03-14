@@ -10,6 +10,17 @@ import { Film, Tv, Clock, Star, List } from 'lucide-react';
 import './Dashboard.css';
 
 const COLORS = ['var(--accent-color)', 'var(--warning-color)', 'var(--success-color)', 'var(--danger-color)', '#8884d8'];
+const HEATMAP_WEEKS = 52;
+const HEATMAP_DAYS = HEATMAP_WEEKS * 7;
+
+const toDayKey = (date) => {
+    const y = date.getFullYear();
+    const m = `${date.getMonth() + 1}`.padStart(2, '0');
+    const d = `${date.getDate()}`.padStart(2, '0');
+    return `${y}-${m}-${d}`;
+};
+
+const mondayIndex = (day) => (day + 6) % 7;
 
 const formatTime = (totalMinutes) => {
     if (!totalMinutes) return { value: 0, unit: 'hrs', subValue: 0, subUnit: '', thirdValue: 0, thirdUnit: '' };
@@ -129,6 +140,110 @@ const Dashboard = () => {
         };
     }, [history]);
 
+    const watchHeatmap = useMemo(() => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Show activity for approximately 6 months and align columns to Monday.
+        const firstDate = new Date(today);
+        firstDate.setDate(today.getDate() - (HEATMAP_DAYS - 1));
+        const firstDateDayIndex = mondayIndex(firstDate.getDay());
+        firstDate.setDate(firstDate.getDate() - firstDateDayIndex);
+
+        const dailyMap = {};
+
+        history.forEach((item) => {
+            const rawDate = item.watchDate || item.lastWatchedDate || item.createdAt;
+            if (!rawDate) return;
+
+            const date = new Date(rawDate);
+            if (Number.isNaN(date.getTime())) return;
+
+            date.setHours(0, 0, 0, 0);
+            if (date < firstDate || date > today) return;
+
+            const key = toDayKey(date);
+            const itemMinutes = Math.max(0, item.watchTimeMinutes || 0);
+
+            if (!dailyMap[key]) {
+                dailyMap[key] = { minutes: 0, score: 0, count: 0 };
+            }
+
+            dailyMap[key].minutes += itemMinutes;
+            dailyMap[key].score += itemMinutes > 0 ? itemMinutes : 1;
+            dailyMap[key].count += 1;
+        });
+
+        const scoreValues = Object.values(dailyMap)
+            .map((v) => v.score)
+            .filter((v) => v > 0)
+            .sort((a, b) => a - b);
+
+        const q1 = scoreValues[Math.floor((scoreValues.length - 1) * 0.25)] || 0;
+        const q2 = scoreValues[Math.floor((scoreValues.length - 1) * 0.5)] || 0;
+        const q3 = scoreValues[Math.floor((scoreValues.length - 1) * 0.75)] || 0;
+
+        const getLevel = (score) => {
+            if (!score || score <= 0) return 0;
+            if (score <= q1) return 1;
+            if (score <= q2) return 2;
+            if (score <= q3) return 3;
+            return 4;
+        };
+
+        const totalDays = Math.floor((today - firstDate) / (1000 * 60 * 60 * 24)) + 1;
+        const totalWeeks = Math.ceil(totalDays / 7);
+        const weeks = [];
+        const monthLabels = [];
+        let lastMonthIndex = -1;
+
+        for (let week = 0; week < totalWeeks; week += 1) {
+            const weekDays = [];
+
+            for (let row = 0; row < 7; row += 1) {
+                const dayOffset = (week * 7) + row;
+                const date = new Date(firstDate);
+                date.setDate(firstDate.getDate() + dayOffset);
+
+                if (date > today) {
+                    weekDays.push(null);
+                    continue;
+                }
+
+                const key = toDayKey(date);
+                const value = dailyMap[key] || { minutes: 0, score: 0, count: 0 };
+
+                weekDays.push({
+                    key,
+                    date,
+                    count: value.count,
+                    minutes: value.minutes,
+                    level: getLevel(value.score)
+                });
+            }
+
+            const weekStart = weekDays.find((d) => d)?.date;
+            if (weekStart) {
+                const month = weekStart.getMonth();
+                if (month !== lastMonthIndex) {
+                    monthLabels.push({
+                        column: week,
+                        label: weekStart.toLocaleString(undefined, { month: 'short' })
+                    });
+                    lastMonthIndex = month;
+                }
+            }
+
+            weeks.push(weekDays);
+        }
+
+        return {
+            weeks,
+            monthLabels,
+            activeDays: Object.values(dailyMap).filter((v) => v.count > 0).length
+        };
+    }, [history]);
+
     if (loading) {
         return <div className="dashboard-loading"><span className="loader"></span></div>;
     }
@@ -241,12 +356,94 @@ const Dashboard = () => {
                                     <XAxis type="number" dataKey="hoursFloat" hide />
                                     <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} />
                                     <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} formatter={(value, name, props) => [formatTimeStr(props.payload.time), 'Time']} />
-                                    <Bar dataKey="hoursFloat" fill="var(--accent-color)" radius={[0, 4, 4, 0]} maxBarSize={40} />
+                                    <Bar
+                                        dataKey="hoursFloat"
+                                        fill="var(--accent-color)"
+                                        background={{ fill: 'var(--bg-tertiary)', radius: 999 }}
+                                        radius={[999, 999, 999, 999]}
+                                        maxBarSize={24}
+                                    />
                                 </BarChart>
                             </ResponsiveContainer>
                         ) : (
                             <div className="no-data">No data yet</div>
                         )}
+                    </div>
+                </div>
+
+                <div className="chart-card full-width">
+                    <div className="heatmap-header">
+                        <h3>Watching Time Heatmap</h3>
+                        <span>{watchHeatmap.activeDays} active days in the last 12 months</span>
+                    </div>
+
+                    <div className="watch-heatmap-wrapper">
+                        <div className="heatmap-months" style={{ gridTemplateColumns: `repeat(${watchHeatmap.weeks.length}, 12px)` }}>
+                            {watchHeatmap.weeks.map((_, index) => {
+                                const month = watchHeatmap.monthLabels.find((m) => m.column === index);
+                                return (
+                                    <span key={`month-${index}`} className="heatmap-month-label">
+                                        {month ? month.label : ''}
+                                    </span>
+                                );
+                            })}
+                        </div>
+
+                        <div className="heatmap-body">
+                            <div className="heatmap-day-labels">
+                                <span>Mon</span>
+                                <span></span>
+                                <span>Wed</span>
+                                <span></span>
+                                <span>Fri</span>
+                                <span></span>
+                                <span></span>
+                            </div>
+
+                            <div className="heatmap-columns">
+                                {watchHeatmap.weeks.map((week, weekIndex) => (
+                                    <div key={`week-${weekIndex}`} className="heatmap-week">
+                                        {week.map((day, dayIndex) => {
+                                            if (!day) {
+                                                return <span key={`empty-${weekIndex}-${dayIndex}`} className="heatmap-cell heatmap-cell-empty" />;
+                                            }
+
+                                            const dateLabel = day.date.toLocaleDateString(undefined, {
+                                                year: 'numeric',
+                                                month: 'short',
+                                                day: 'numeric'
+                                            });
+
+                                            let title = `${dateLabel}: No watching activity`;
+                                            if (day.count > 0 && day.minutes > 0) {
+                                                title = `${dateLabel}: ${day.count} item${day.count > 1 ? 's' : ''}, ${formatTimeStr(day.minutes)}`;
+                                            } else if (day.count > 0) {
+                                                title = `${dateLabel}: ${day.count} item${day.count > 1 ? 's' : ''} watched`;
+                                            }
+
+                                            return (
+                                                <span
+                                                    key={day.key}
+                                                    className={`heatmap-cell level-${day.level}`}
+                                                    title={title}
+                                                    aria-label={title}
+                                                />
+                                            );
+                                        })}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="heatmap-legend">
+                            <span>Less</span>
+                            <span className="heatmap-cell level-0" />
+                            <span className="heatmap-cell level-1" />
+                            <span className="heatmap-cell level-2" />
+                            <span className="heatmap-cell level-3" />
+                            <span className="heatmap-cell level-4" />
+                            <span>More</span>
+                        </div>
                     </div>
                 </div>
 

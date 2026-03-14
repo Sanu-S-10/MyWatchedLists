@@ -50,8 +50,17 @@ const corsOptions = allowedOrigins.length
         return callback(new Error('Not allowed by CORS'));
       },
       credentials: true,
+      optionsSuccessStatus: 200,
+      methods: ['GET', 'POST', 'PUT', 'DELETE'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
     }
-  : { origin: true, credentials: true };
+  : {
+      origin: false,
+      credentials: true,
+      optionsSuccessStatus: 200,
+      methods: ['GET', 'POST', 'PUT', 'DELETE'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+    };
 
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '1mb' }));
@@ -61,6 +70,7 @@ const apiLimiter = rateLimit({
   max: 3000,
   standardHeaders: true,
   legacyHeaders: false,
+  message: 'Too many requests, please try again later.',
 });
 
 const authLimiter = rateLimit({
@@ -68,6 +78,7 @@ const authLimiter = rateLimit({
   max: 60,
   standardHeaders: true,
   legacyHeaders: false,
+  message: 'Too many authentication attempts, please try again later.',
 });
 
 // Basic Route

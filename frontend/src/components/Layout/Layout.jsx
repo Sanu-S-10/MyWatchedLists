@@ -9,7 +9,7 @@ const Layout = ({ children }) => {
 
     // Only show sidebar and bottom nav for authenticated users
     if (!user) {
-        return <div className="layout-container">{children}</div>;
+        return <div className="layout-container public-layout">{children}</div>;
     }
 
     return (

@@ -10,6 +10,7 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         const userInfo = localStorage.getItem('userInfo');
         if (userInfo) {
+            // In production, decrypt or securely parse userInfo
             setUser(JSON.parse(userInfo));
         }
         setLoading(false);
@@ -18,13 +19,27 @@ export const AuthProvider = ({ children }) => {
     const login = async (email, password) => {
         const { data } = await axios.post('/api/users/login', { email, password });
         setUser(data);
-        localStorage.setItem('userInfo', JSON.stringify(data));
+        // Only store minimal info in localStorage for production
+        localStorage.setItem('userInfo', JSON.stringify({
+            _id: data._id,
+            username: data.username,
+            email: data.email,
+            preferences: data.preferences,
+            token: data.token
+        }));
     };
 
     const register = async (username, email, password) => {
         const { data } = await axios.post('/api/users', { username, email, password });
         setUser(data);
-        localStorage.setItem('userInfo', JSON.stringify(data));
+        // Only store minimal info in localStorage for production
+        localStorage.setItem('userInfo', JSON.stringify({
+            _id: data._id,
+            username: data.username,
+            email: data.email,
+            preferences: data.preferences,
+            token: data.token
+        }));
     };
 
     const logout = () => {
@@ -44,7 +59,14 @@ export const AuthProvider = ({ children }) => {
         try {
             const { data } = await axios.put('/api/users/profile', updates, config);
             setUser(data);
-            localStorage.setItem('userInfo', JSON.stringify(data));
+            // Only store minimal info in localStorage for production
+            localStorage.setItem('userInfo', JSON.stringify({
+                _id: data._id,
+                username: data.username,
+                email: data.email,
+                preferences: data.preferences,
+                token: data.token
+            }));
             return data;
         } catch (error) {
             console.error('Error updating profile:', error.response?.data || error.message);
