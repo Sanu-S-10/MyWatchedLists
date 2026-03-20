@@ -19,6 +19,7 @@ const Trending = lazy(() => import('./pages/Trending/Trending'));
 const Lists = lazy(() => import('./pages/Lists/Lists'));
 const SharedList = lazy(() => import('./pages/Lists/SharedList'));
 const More = lazy(() => import('./pages/More/More'));
+const PersonDetail = lazy(() => import('./pages/Person/PersonDetail'));
 
 const ProtectedRoute = ({ children }) => {
     const { user, loading } = useContext(AuthContext);
@@ -60,8 +61,9 @@ const AppRoutes = () => {
                 <Route path="/aifilter" element={<ProtectedRoute><AIFilter /></ProtectedRoute>} />
                 <Route path="/trending" element={<ProtectedRoute><Trending /></ProtectedRoute>} />
                 <Route path="/lists" element={<ProtectedRoute><Lists /></ProtectedRoute>} />
-                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                    <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                     <Route path="/more" element={<ProtectedRoute><More /></ProtectedRoute>} />
+                    <Route path="/person/:id" element={<ProtectedRoute><PersonDetail /></ProtectedRoute>} />
             </Routes>
         </Suspense>
     );

@@ -83,7 +83,7 @@ const AddModal = ({ item, onClose }) => {
                 const API_KEY = import.meta.env.VITE_TMDB_API_KEY; // Replace with env key later
 
                 if (API_KEY) {
-                    const { data } = await axios.get(`https://api.themoviedb.org/3/${type}/${item.id}?api_key=${API_KEY}`);
+                    const { data } = await axios.get(`https://api.themoviedb.org/3/${type}/${item.id}?api_key=${API_KEY}&append_to_response=credits`);
                     setDetails(data);
 
                     if (type === 'tv' && data.seasons) {
@@ -383,6 +383,42 @@ const AddModal = ({ item, onClose }) => {
                                         <span>{details ? (details.number_of_seasons || '?') : '?'} Seasons, {details ? (details.number_of_episodes || '?') : '?'} Episodes</span>
                                     )}
                                 </div>
+
+                                {details?.credits && (
+                                    <div style={{ marginTop: '12px' }}>
+                                        {details.credits.crew?.find(p => p.job === 'Director') && (
+                                            <p style={{ margin: '4px 0', fontSize: '0.85rem' }}>
+                                                <span style={{ color: 'var(--text-secondary)' }}>Director:</span>
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => { onClose(); navigate(`/person/${details.credits.crew.find(p => p.job === 'Director').id}`); }}
+                                                    style={{ marginLeft: '8px', fontWeight: '500', background: 'none', border: 'none', padding: 0, color: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}
+                                                >
+                                                    {details.credits.crew.find(p => p.job === 'Director').name}
+                                                </button>
+                                            </p>
+                                        )}
+                                        {details.credits.cast?.length > 0 && (
+                                            <p style={{ margin: '4px 0', fontSize: '0.85rem' }}>
+                                                <span style={{ color: 'var(--text-secondary)' }}>Cast:</span>
+                                                <span style={{ marginLeft: '8px', fontWeight: '500' }}>
+                                                    {details.credits.cast.slice(0, 5).map((c, index) => (
+                                                        <span key={c.id}>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => { onClose(); navigate(`/person/${c.id}`); }}
+                                                                style={{ background: 'none', border: 'none', padding: 0, color: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}
+                                                            >
+                                                                {c.name}
+                                                            </button>
+                                                            {index < Math.min(4, details.credits.cast.length - 1) ? ', ' : ''}
+                                                        </span>
+                                                    ))}
+                                                </span>
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
 

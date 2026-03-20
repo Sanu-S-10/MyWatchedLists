@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom';
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { X, Heart, Calendar, Star, Clock } from 'lucide-react';
 import Button from '../../components/UI/Button';
@@ -12,6 +13,7 @@ const DetailsModal = ({ item, onClose, onEdit }) => {
     const [director, setDirector] = useState(null);
     const [cast, setCast] = useState([]);
     const [fullSeasonsData, setFullSeasonsData] = useState([]);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchDetails = async () => {
@@ -125,13 +127,46 @@ const DetailsModal = ({ item, onClose, onEdit }) => {
                                         {director && (
                                             <p style={{ margin: '4px 0', fontSize: '0.85rem' }}>
                                                 <span style={{ color: 'var(--text-secondary)' }}>Director:</span>
-                                                <span style={{ marginLeft: '8px', fontWeight: '500' }}>{director.name}</span>
+                                                <button 
+                                                    onClick={() => { onClose(); navigate(`/person/${director.id}`); }}
+                                                    style={{ 
+                                                        marginLeft: '8px', 
+                                                        fontWeight: '500', 
+                                                        background: 'none', 
+                                                        border: 'none', 
+                                                        padding: 0, 
+                                                        color: 'inherit', 
+                                                        cursor: 'pointer',
+                                                        textDecoration: 'underline'
+                                                    }}
+                                                >
+                                                    {director.name}
+                                                </button>
                                             </p>
                                         )}
                                         {cast.length > 0 && (
                                             <p style={{ margin: '4px 0', fontSize: '0.85rem' }}>
                                                 <span style={{ color: 'var(--text-secondary)' }}>Cast:</span>
-                                                <span style={{ marginLeft: '8px', fontWeight: '500' }}>{cast.map(c => c.name).join(', ')}</span>
+                                                <span style={{ marginLeft: '8px', fontWeight: '500' }}>
+                                                    {cast.map((c, index) => (
+                                                        <span key={c.id}>
+                                                            <button
+                                                                onClick={() => { onClose(); navigate(`/person/${c.id}`); }}
+                                                                style={{ 
+                                                                    background: 'none', 
+                                                                    border: 'none', 
+                                                                    padding: 0, 
+                                                                    color: 'inherit', 
+                                                                    cursor: 'pointer',
+                                                                    textDecoration: 'underline'
+                                                                }}
+                                                            >
+                                                                {c.name}
+                                                            </button>
+                                                            {index < cast.length - 1 ? ', ' : ''}
+                                                        </span>
+                                                    ))}
+                                                </span>
                                             </p>
                                         )}
                                     </div>
