@@ -78,11 +78,11 @@ function App() {
                             <Layout>
                                 <AppRoutes />
                             </Layout>
+                            <Analytics />
                         </Router>
                     </WatchHistoryProvider>
                 </ToastProvider>
             </ThemeProvider>
-            <Analytics />
         </AuthProvider>
     );
 }
