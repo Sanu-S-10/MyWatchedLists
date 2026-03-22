@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { Flame } from 'lucide-react';
 import AddModal from '../Search/AddModal';
@@ -52,6 +53,15 @@ const Trending = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [selectedItem, setSelectedItem] = useState(null);
+    const location = useLocation();
+
+    useEffect(() => {
+        if (location.state?.reopenItem) {
+            setSelectedItem(location.state.reopenItem);
+            // Clear state to avoid reopening on refresh
+            window.history.replaceState({ ...location.state, reopenItem: null }, '');
+        }
+    }, [location.state]);
     const [selectedType, setSelectedType] = useState('movie');
 
     useEffect(() => {

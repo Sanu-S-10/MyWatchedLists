@@ -1,4 +1,5 @@
 import { useState, useContext, useMemo, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { WatchHistoryContext } from '../../context/WatchHistoryContext';
 import { ToastContext } from '../../context/ToastContext';
 import MediaCard from '../../components/UI/MediaCard';
@@ -6,11 +7,11 @@ import Skeleton from '../../components/UI/Skeleton';
 import EditModal from './EditModal';
 import DetailsModal from './DetailsModal';
 import ConfirmModal from '../../components/UI/ConfirmModal';
-import { Filter, SortDesc, Edit2, Search, Grid3x3, List } from 'lucide-react';
+import { Filter, SortDesc, Edit2, Search, Grid3x3, List, RefreshCcw } from 'lucide-react';
 import './ContentList.css';
 
 const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
-    const { history, loading, removeItem } = useContext(WatchHistoryContext);
+    const { history, loading, isRefreshing, removeItem } = useContext(WatchHistoryContext);
     const { addToast } = useContext(ToastContext);
 
     const [filterGenre, setFilterGenre] = useState('');
@@ -24,6 +25,15 @@ const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
     const [showFilters, setShowFilters] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
     const [viewingItem, setViewingItem] = useState(null);
+    const location = useLocation();
+
+    useEffect(() => {
+        if (location.state?.reopenItem) {
+            setViewingItem(location.state.reopenItem);
+            // Clear state to avoid reopening on refresh
+            window.history.replaceState({ ...location.state, reopenItem: null }, '');
+        }
+    }, [location.state]);
     const [itemToDelete, setItemToDelete] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
     const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
@@ -334,7 +344,10 @@ const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
         <div className="content-list-page fade-in">
             <div className="page-header flex-between">
                 <div>
-                    <h1>{title}</h1>
+                    <h1>
+                        {title}
+                        {isRefreshing && <RefreshCcw size={18} className="spin" style={{ marginLeft: '12px', color: 'var(--accent-color)', opacity: 0.7 }} />}
+                    </h1>
                     <p>{filteredItems.length} items found</p>
                 </div>
                 <div className="header-actions">

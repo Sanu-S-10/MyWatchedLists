@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { ArrowLeft, Calendar, MapPin, Film, Tv, Star } from 'lucide-react';
 import AddModal from '../Search/AddModal';
@@ -8,6 +8,9 @@ import './PersonDetail.css';
 const PersonDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
+    const fromPath = location.state?.fromPath;
+    const fromMedia = location.state?.fromMedia;
     const [person, setPerson] = useState(null);
     const [credits, setCredits] = useState([]);
     const [knownFor, setKnownFor] = useState([]);
@@ -96,7 +99,22 @@ const PersonDetail = () => {
         if (id) {
             fetchPersonData();
         }
-    }, [id]);
+
+        // Handle re-opening a modal if passed in state (e.g. from back navigation)
+        if (location.state?.reopenItem) {
+            setSelectedItem(location.state.reopenItem);
+            // Clear the state so it doesn't re-open on every render
+            window.history.replaceState({ ...location.state, reopenItem: null }, '');
+        }
+    }, [id, location.state]);
+
+    const handleBack = () => {
+        if (fromPath && fromMedia) {
+            navigate(fromPath, { state: { reopenItem: fromMedia } });
+        } else {
+            navigate(-1);
+        }
+    };
 
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A';
@@ -116,7 +134,7 @@ const PersonDetail = () => {
         return (
             <div className="person-detail-error">
                 <p>{error || 'Person not found'}</p>
-                <button onClick={() => navigate(-1)} className="back-btn">
+                <button onClick={handleBack} className="back-btn">
                     <ArrowLeft size={20} /> Back
                 </button>
             </div>
@@ -125,7 +143,7 @@ const PersonDetail = () => {
 
     return (
         <div className="person-detail-container fade-in">
-            <button onClick={() => navigate(-1)} className="back-btn">
+            <button onClick={handleBack} className="back-btn">
                 <ArrowLeft size={20} /> Back
             </button>
 

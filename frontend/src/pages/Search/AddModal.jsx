@@ -2,7 +2,7 @@ import { useState, useContext, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { X, Heart, Calendar } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { WatchHistoryContext } from '../../context/WatchHistoryContext';
 import { ToastContext } from '../../context/ToastContext';
@@ -23,6 +23,7 @@ const GENRE_MAP = {
 
 const AddModal = ({ item, onClose }) => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { user } = useContext(AuthContext);
     const [details, setDetails] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -389,13 +390,18 @@ const AddModal = ({ item, onClose }) => {
                                         {details.credits.crew?.find(p => p.job === 'Director') && (
                                             <p style={{ margin: '4px 0', fontSize: '0.85rem' }}>
                                                 <span style={{ color: 'var(--text-secondary)' }}>Director:</span>
-                                                <button 
-                                                    type="button"
-                                                    onClick={() => { onClose(); navigate(`/person/${details.credits.crew.find(p => p.job === 'Director').id}`); }}
-                                                    style={{ marginLeft: '8px', fontWeight: '500', background: 'none', border: 'none', padding: 0, color: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}
-                                                >
-                                                    {details.credits.crew.find(p => p.job === 'Director').name}
-                                                </button>
+                                                    <button 
+                                                        type="button"
+                                                        onClick={() => { 
+                                                            onClose(); 
+                                                            navigate(`/person/${details.credits.crew.find(p => p.job === 'Director').id}`, { 
+                                                                state: { fromPath: location.pathname, fromMedia: item } 
+                                                            }); 
+                                                        }}
+                                                        style={{ marginLeft: '8px', fontWeight: '500', background: 'none', border: 'none', padding: 0, color: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}
+                                                    >
+                                                        {details.credits.crew.find(p => p.job === 'Director').name}
+                                                    </button>
                                             </p>
                                         )}
                                         {details.credits.cast?.length > 0 && (
@@ -406,7 +412,12 @@ const AddModal = ({ item, onClose }) => {
                                                         <span key={c.id}>
                                                             <button
                                                                 type="button"
-                                                                onClick={() => { onClose(); navigate(`/person/${c.id}`); }}
+                                                                onClick={() => { 
+                                                                    onClose(); 
+                                                                    navigate(`/person/${c.id}`, { 
+                                                                        state: { fromPath: location.pathname, fromMedia: item } 
+                                                                    }); 
+                                                                }}
                                                                 style={{ background: 'none', border: 'none', padding: 0, color: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}
                                                             >
                                                                 {c.name}

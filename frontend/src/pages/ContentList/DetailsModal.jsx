@@ -1,6 +1,6 @@
 import { createPortal } from 'react-dom';
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { X, Heart, Calendar, Star, Clock } from 'lucide-react';
 import Button from '../../components/UI/Button';
@@ -14,6 +14,7 @@ const DetailsModal = ({ item, onClose, onEdit }) => {
     const [cast, setCast] = useState([]);
     const [fullSeasonsData, setFullSeasonsData] = useState([]);
     const navigate = useNavigate();
+    const location = useLocation();
 
     useEffect(() => {
         const fetchDetails = async () => {
@@ -128,7 +129,12 @@ const DetailsModal = ({ item, onClose, onEdit }) => {
                                             <p style={{ margin: '4px 0', fontSize: '0.85rem' }}>
                                                 <span style={{ color: 'var(--text-secondary)' }}>Director:</span>
                                                 <button 
-                                                    onClick={() => { onClose(); navigate(`/person/${director.id}`); }}
+                                                    onClick={() => { 
+                                                        onClose(); 
+                                                        navigate(`/person/${director.id}`, { 
+                                                            state: { fromPath: location.pathname, fromMedia: item } 
+                                                        }); 
+                                                    }}
                                                     style={{ 
                                                         marginLeft: '8px', 
                                                         fontWeight: '500', 
@@ -151,7 +157,12 @@ const DetailsModal = ({ item, onClose, onEdit }) => {
                                                     {cast.map((c, index) => (
                                                         <span key={c.id}>
                                                             <button
-                                                                onClick={() => { onClose(); navigate(`/person/${c.id}`); }}
+                                                                onClick={() => { 
+                                                                    onClose(); 
+                                                                    navigate(`/person/${c.id}`, { 
+                                                                        state: { fromPath: location.pathname, fromMedia: item } 
+                                                                    }); 
+                                                                }}
                                                                 style={{ 
                                                                     background: 'none', 
                                                                     border: 'none', 

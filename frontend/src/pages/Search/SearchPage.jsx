@@ -1,10 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import SearchBar from '../../components/UI/SearchBar';
 import AddModal from './AddModal';
 import './SearchPage.css';
 
 const SearchPage = () => {
     const [selectedItem, setSelectedItem] = useState(null);
+    const location = useLocation();
+
+    useEffect(() => {
+        if (location.state?.reopenItem) {
+            setSelectedItem(location.state.reopenItem);
+            // Clear state to avoid reopening on refresh
+            window.history.replaceState({ ...location.state, reopenItem: null }, '');
+        }
+    }, [location.state]);
 
     const handleSelectResult = (item) => {
         setSelectedItem(item);

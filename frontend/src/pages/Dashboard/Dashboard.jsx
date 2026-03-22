@@ -6,7 +6,7 @@ import {
     LineChart, Line
 } from 'recharts';
 import { Link } from 'react-router-dom';
-import { Film, Tv, Clock, Star, List } from 'lucide-react';
+import { Film, Tv, Clock, Star, List, RefreshCcw } from 'lucide-react';
 import './Dashboard.css';
 
 const COLORS = ['var(--accent-color)', 'var(--warning-color)', 'var(--success-color)', 'var(--danger-color)', '#8884d8'];
@@ -61,7 +61,7 @@ const formatTimeStr = (totalMinutes) => {
 };
 
 const Dashboard = () => {
-    const { history, loading } = useContext(WatchHistoryContext);
+    const { history, loading, isRefreshing } = useContext(WatchHistoryContext);
 
     const stats = useMemo(() => {
         let totals = {
@@ -251,7 +251,10 @@ const Dashboard = () => {
     return (
         <div className="dashboard-page fade-in">
             <div className="dashboard-header">
-                <h1>Overview Dashboard</h1>
+                <h1>
+                    Overview Dashboard
+                    {isRefreshing && <RefreshCcw size={18} className="syncing-icon spin" style={{ marginLeft: '12px', color: 'var(--accent-color)', opacity: 0.7 }} />}
+                </h1>
                 <p>Your watching statistics at a glance.</p>
 
                 <Link to="/all" className="view-all-btn">
