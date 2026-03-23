@@ -4,7 +4,6 @@ import { ToastContext } from '../../context/ToastContext';
 import { AuthContext } from '../../context/AuthContext';
 import MediaCard from '../../components/UI/MediaCard';
 import Skeleton from '../../components/UI/Skeleton';
-import DetailsModal from '../ContentList/DetailsModal';
 import EditModal from '../ContentList/EditModal';
 import ConfirmModal from '../../components/UI/ConfirmModal';
 import { WatchHistoryContext } from '../../context/WatchHistoryContext';
@@ -24,7 +23,6 @@ const AIFilter = () => {
     const [isBasicMode, setIsBasicMode] = useState(false);
 
     // Modal states
-    const [viewingItem, setViewingItem] = useState(null);
     const [editingItem, setEditingItem] = useState(null);
     const [itemToDelete, setItemToDelete] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -177,7 +175,7 @@ const AIFilter = () => {
                         <div className="grid-container mt-4">
                             {filteredItems.map((item) => (
                                 <div key={item._id} className="card-wrapper">
-                                    <MediaCard item={item} onClick={() => setViewingItem(item)} />
+                                    <MediaCard item={item} />
                                     <div className="card-actions-hover">
                                         <button className="edit-btn" onClick={(e) => { e.stopPropagation(); setEditingItem(item); }} title="Edit">
                                             <Edit2 size={14} />
@@ -211,17 +209,6 @@ const AIFilter = () => {
                     item={editingItem}
                     onClose={() => setEditingItem(null)}
                     onSaved={handleEditComplete}
-                />
-            )}
-
-            {viewingItem && (
-                <DetailsModal
-                    item={viewingItem}
-                    onClose={() => setViewingItem(null)}
-                    onEdit={(item) => {
-                        setViewingItem(null);
-                        setEditingItem(item);
-                    }}
                 />
             )}
 

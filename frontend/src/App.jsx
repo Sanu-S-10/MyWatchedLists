@@ -20,6 +20,7 @@ const Lists = lazy(() => import('./pages/Lists/Lists'));
 const SharedList = lazy(() => import('./pages/Lists/SharedList'));
 const More = lazy(() => import('./pages/More/More'));
 const PersonDetail = lazy(() => import('./pages/Person/PersonDetail'));
+const MediaDetail = lazy(() => import('./pages/Media/MediaDetail'));
 
 const ProtectedRoute = ({ children }) => {
     const { user, loading } = useContext(AuthContext);
@@ -64,6 +65,7 @@ const AppRoutes = () => {
                     <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                     <Route path="/more" element={<ProtectedRoute><More /></ProtectedRoute>} />
                     <Route path="/person/:id" element={<ProtectedRoute><PersonDetail /></ProtectedRoute>} />
+                    <Route path="/media/:id" element={<ProtectedRoute><MediaDetail /></ProtectedRoute>} />
             </Routes>
         </Suspense>
     );

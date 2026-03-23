@@ -28,7 +28,11 @@ const MediaCard = ({ item, onClick, pageType }) => {
     const isAnimatedSeries = item.mediaType === 'series' && item.subType === 'animation';
 
     return (
-        <div className="media-card" onClick={() => onClick && onClick(item)}>
+        <Link 
+            to={`/media/${item.tmdbId}?type=${item.mediaType}`} 
+            className="media-card" 
+            onClick={(e) => onClick && onClick(item, e)}
+        >
             <div className="media-poster">
                 <img src={posterUrl} alt={item.title || item.name} loading="lazy" />
 
@@ -86,7 +90,7 @@ const MediaCard = ({ item, onClick, pageType }) => {
                     </div>
                 )}
             </div>
-        </div>
+        </Link>
     );
 };
 

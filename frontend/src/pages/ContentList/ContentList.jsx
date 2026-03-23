@@ -1,11 +1,10 @@
 import { useState, useContext, useMemo, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { WatchHistoryContext } from '../../context/WatchHistoryContext';
 import { ToastContext } from '../../context/ToastContext';
 import MediaCard from '../../components/UI/MediaCard';
 import Skeleton from '../../components/UI/Skeleton';
 import EditModal from './EditModal';
-import DetailsModal from './DetailsModal';
 import ConfirmModal from '../../components/UI/ConfirmModal';
 import { Filter, SortDesc, Edit2, Search, Grid3x3, List, RefreshCcw } from 'lucide-react';
 import './ContentList.css';
@@ -24,16 +23,16 @@ const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
     const [sortBy, setSortBy] = useState('createdAtDesc'); // createdAtDesc, lastWatchedDesc, ratingDesc, yearDesc
     const [showFilters, setShowFilters] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
-    const [viewingItem, setViewingItem] = useState(null);
     const location = useLocation();
+    const navigate = useNavigate();
 
     useEffect(() => {
         if (location.state?.reopenItem) {
-            setViewingItem(location.state.reopenItem);
+            navigate(`/media/${location.state.reopenItem.tmdbId}?type=${location.state.reopenItem.mediaType}`);
             // Clear state to avoid reopening on refresh
             window.history.replaceState({ ...location.state, reopenItem: null }, '');
         }
-    }, [location.state]);
+    }, [location.state, navigate]);
     const [itemToDelete, setItemToDelete] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
     const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
@@ -502,7 +501,7 @@ const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
                         <div key={item._id} className="card-wrapper">
                             {viewMode === 'grid' ? (
                                 <>
-                                    <MediaCard item={item} onClick={() => setViewingItem(item)} pageType={type} />
+                                    <MediaCard item={item} pageType={type} />
                                     <div className="card-actions-hover">
                                         <button className="edit-btn" onClick={(e) => { e.stopPropagation(); setEditingItem(item); }} title="Edit">
                                             <Edit2 size={14} />
@@ -519,7 +518,7 @@ const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
                                             loading="lazy"
                                         />
                                     </div>
-                                    <div className="list-item-content" onClick={() => setViewingItem(item)}>
+                                    <div className="list-item-content" onClick={() => navigate(`/media/${item.tmdbId}?type=${item.mediaType}`)}>
                                         <h3>{item.title || item.name}</h3>
                                         <div className="list-item-meta">
                                             <span className="meta-year">
@@ -579,13 +578,6 @@ const ContentList = ({ type = 'all', title = 'My Watched List' }) => {
                 <EditModal item={editingItem} onClose={() => setEditingItem(null)} />
             )}
 
-            {viewingItem && (
-                <DetailsModal
-                    item={viewingItem}
-                    onClose={() => setViewingItem(null)}
-                    onEdit={(item) => setEditingItem(item)}
-                />
-            )}
 
             {itemToDelete && (
                 <ConfirmModal
